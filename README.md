@@ -8,7 +8,7 @@ O projeto está organizado em fases de ingestão.
 
 ### Fase 1
 
-Arquivos já suportados:
+Arquivos suportados:
 
 1. `data/MimicOrganization.ndjson.gz`
 2. `data/MimicLocation.ndjson.gz`
@@ -16,9 +16,10 @@ Arquivos já suportados:
 
 ### Fase 2
 
-Novo arquivo suportado nesta entrega:
+Arquivos suportados:
 
 4. `data/MimicEncounter.ndjson.gz`
+5. `data/MimicEncounterED.ndjson.gz`
 
 A ordem de importação é obrigatória:
 
@@ -26,6 +27,7 @@ A ordem de importação é obrigatória:
 2. `Location`
 3. `Patient`
 4. `Encounter`
+5. `EncounterED`
 
 A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. O desenho continua preparado para novas fases sem exigir acoplamento excessivo entre recursos.
 
@@ -88,6 +90,10 @@ As configurações não sensíveis ficam versionadas em YAML:
   - batch size
   - nome físico da tabela principal
   - nome físico da tabela auxiliar de localizações
+- `config/ingestion/encounter_ed.yaml`
+  - caminho do arquivo de `EncounterED`
+  - batch size
+  - nome físico da tabela especializada
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -123,6 +129,7 @@ A execução principal segue exatamente esta ordem:
 4. ingestão de `Location`
 5. ingestão de `Patient`
 6. ingestão de `Encounter`
+7. ingestão de `EncounterED`
 
 ## Modelagem Final
 
@@ -172,6 +179,20 @@ A execução principal segue exatamente esta ordem:
 - `start_date`
 - `end_date`
 
+### Tabela `encounter_ed`
+
+- `id` `PK`
+- `encounter_id` `FK -> encounter.id` `nullable`
+- `patient_id` `FK -> patient.id` `nullable`
+- `organization_id` `FK -> organization.id` `nullable`
+- `status`
+- `class_code`
+- `start_date`
+- `end_date`
+- `admit_source_code`
+- `discharge_disposition_code`
+- `identifier`
+
 ## Estratégia De Consolidação
 
 Quando uma estrutura FHIR contém listas, a ingestão adota sempre o **primeiro valor não vazio e válido encontrado**.
@@ -184,6 +205,8 @@ Isso vale para:
 - `priority.coding[*].code`
 - `serviceType.coding[*].code`
 - `location[*].location.reference`
+- `hospitalization.admitSource.coding[*].code`
+- `hospitalization.dischargeDisposition.coding[*].code`
 
 As extensões US Core de `Patient` também foram simplificadas:
 
@@ -191,7 +214,9 @@ As extensões US Core de `Patient` também foram simplificadas:
 - ethnicity: `text`
 - birthsex: `valueCode`
 
-No `Encounter`, a referência `serviceProvider.reference` é usada como fonte preferencial para `organization_id`. O campo `identifier[*].assigner.reference` é observado no dado, mas não é materializado nesta fase.
+No `Encounter`, a referência `serviceProvider.reference` é usada como fonte preferencial para `organization_id`.
+
+No `EncounterED`, `partOf.reference` materializa `encounter_id` e deixa explícita a relação de especialização com `encounter`.
 
 ## Relacionamentos
 
@@ -201,10 +226,13 @@ No `Encounter`, a referência `serviceProvider.reference` é usada como fonte pr
 - `encounter.organization_id -> organization.id`
 - `encounter_location.encounter_id -> encounter.id`
 - `encounter_location.location_id -> location.id`
+- `encounter_ed.encounter_id -> encounter.id`
+- `encounter_ed.patient_id -> patient.id`
+- `encounter_ed.organization_id -> organization.id`
 
 Se a referência estiver ausente, a coluna permanece nula quando isso fizer sentido. Se existir, o valor precisa seguir o formato FHIR correto. O parser reutilizável de referências fica em `src/ingestion/parsers/fhir_reference_parser.py`.
 
-O diagrama ASCII das relações está documentado em [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md).
+O diagrama ASCII segmentado das relações está documentado em [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md).
 
 ## Logging
 
@@ -238,7 +266,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient` e `Encounter`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter` e `EncounterED`
 
 ## Entrada Principal
 
@@ -254,18 +282,18 @@ Exemplo de terminal:
 
 ```text
 2026-04-23 12:00:00,000 | INFO | src.main | Logging configurado em /path/to/logs/ingestion.log
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... tempo=...
+2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... encounter_ed_lidos=... encounter_ed_inseridos=... tempo=...
 ```
 
 Exemplo de log em arquivo:
 
 ```text
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicOrganization.ndjson.gz para recurso Organization
-2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo Encounter: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter': ..., 'encounter_location': ...}
+2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicEncounterED.ndjson.gz para recurso EncounterED
+2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo EncounterED: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter_ed': ...}
 ```
 
 ## Evolução Futura

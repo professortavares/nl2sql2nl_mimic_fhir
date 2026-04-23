@@ -4,6 +4,39 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.6.0] - 2026-04-23
+
+### Adicionado
+
+- Suporte à ingestão do arquivo `data/MimicEncounterED.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+- Nova tabela principal `encounter_ed` com FKs para:
+  - `encounter.id`
+  - `patient.id`
+  - `organization.id`
+- Transformer e loader dedicados para `EncounterED`.
+- Testes de unidade para o transformer de `EncounterED`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com diagramas ASCII segmentados por relacionamento.
+- Atualização do `README.md` para documentar a nova fase de ingestão, a modelagem de `EncounterED` e a documentação relacional segmentada.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/encounter_ed.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `encounter_ed`.
+- Expansão do resumo final de ingestão para contemplar `EncounterED`.
+- Consolidação da documentação da modelagem relacional simplificada da segunda fase.
+
+### Corrigido
+
+- Tratamento de referências FHIR em `EncounterED.partOf.reference`, `EncounterED.subject.reference` e `EncounterED.serviceProvider.reference`.
+- Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
+
 ## [0.5.0] - 2026-04-23
 
 ### Adicionado

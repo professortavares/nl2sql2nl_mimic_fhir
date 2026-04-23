@@ -1,6 +1,6 @@
 [project]
 name = "nl2sql2nl-mimic-fhir"
-version = "0.5.0"
+version = "0.6.0"
 description = "Pipeline simplificada de ingestão FHIR para Organization, Location e Patient"
 readme = "README.md"
 requires-python = ">=3.13"

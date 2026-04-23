@@ -20,6 +20,7 @@ def test_parse_fhir_reference_valid() -> None:
     assert parse_fhir_reference("Organization/abc-123", "Organization") == "abc-123"
     assert parse_fhir_reference("Patient/abc-123", "Patient") == "abc-123"
     assert parse_fhir_reference("Location/abc-123", "Location") == "abc-123"
+    assert parse_fhir_reference("Encounter/abc-123", "Encounter") == "abc-123"
 
 
 @pytest.mark.parametrize(
@@ -30,6 +31,7 @@ def test_parse_fhir_reference_valid() -> None:
         ("Patient/abc-123", "Organization", FhirReferenceParseError),
         ("Organization", "Organization", FhirReferenceParseError),
         ("Location/abc-123", "Patient", FhirReferenceParseError),
+        ("Encounter/abc-123", "Organization", FhirReferenceParseError),
     ],
 )
 def test_parse_fhir_reference_invalid_cases(

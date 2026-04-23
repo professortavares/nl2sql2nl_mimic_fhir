@@ -3,3 +3,4 @@ execution_order:
   - location
   - patient
   - encounter
+  - encounter_ed

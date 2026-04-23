@@ -87,6 +87,7 @@ class ProjectSettings:
     location: ResourceIngestionSettings
     patient: ResourceIngestionSettings
     encounter: ResourceIngestionSettings
+    encounter_ed: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -266,6 +267,7 @@ def load_project_settings() -> ProjectSettings:
     location_yaml = load_yaml_file(root / "config/ingestion/location.yaml")
     patient_yaml = load_yaml_file(root / "config/ingestion/patient.yaml")
     encounter_yaml = load_yaml_file(root / "config/ingestion/encounter.yaml")
+    encounter_ed_yaml = load_yaml_file(root / "config/ingestion/encounter_ed.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -343,6 +345,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/encounter.yaml",
         root=root,
     )
+    encounter_ed = _load_resource_settings(
+        encounter_ed_yaml,
+        source=root / "config/ingestion/encounter_ed.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -353,6 +360,7 @@ def load_project_settings() -> ProjectSettings:
         location=location,
         patient=patient,
         encounter=encounter,
+        encounter_ed=encounter_ed,
     )
 
 

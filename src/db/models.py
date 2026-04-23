@@ -5,6 +5,7 @@ Modelos e contratos tipados de tabelas do schema de ingestão.
 from __future__ import annotations
 
 from src.db.schema import (
+    EncounterEDTables,
     EncounterTables,
     LocationTables,
     OrganizationTables,
@@ -15,6 +16,7 @@ from src.db.schema import (
 __all__ = [
     "LocationTables",
     "EncounterTables",
+    "EncounterEDTables",
     "OrganizationTables",
     "PatientTables",
     "ProjectTables",

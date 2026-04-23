@@ -42,6 +42,13 @@ class EncounterTables:
 
 
 @dataclass(slots=True, frozen=True)
+class EncounterEDTables:
+    """Referência à tabela de EncounterED."""
+
+    encounter_ed: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -49,6 +56,7 @@ class ProjectTables:
     location: LocationTables
     patient: PatientTables
     encounter: EncounterTables
+    encounter_ed: EncounterEDTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -91,6 +99,7 @@ def build_project_metadata(
     patient_table_name: str,
     encounter_table_name: str,
     encounter_location_table_name: str,
+    encounter_ed_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -109,6 +118,8 @@ def build_project_metadata(
         Nome físico da tabela de Encounter.
     encounter_location_table_name : str
         Nome físico da tabela auxiliar de Encounter/Location.
+    encounter_ed_table_name : str
+        Nome físico da tabela de EncounterED.
 
     Retorno:
     -------
@@ -122,6 +133,7 @@ def build_project_metadata(
     validate_identifier(patient_table_name, label="patient table")
     validate_identifier(encounter_table_name, label="encounter table")
     validate_identifier(encounter_location_table_name, label="encounter_location table")
+    validate_identifier(encounter_ed_table_name, label="encounter_ed table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -223,6 +235,40 @@ def build_project_metadata(
     Index(f"ix_{encounter_location_table_name}_encounter_id", encounter_location.c.encounter_id)
     Index(f"ix_{encounter_location_table_name}_location_id", encounter_location.c.location_id)
 
+    encounter_ed = Table(
+        encounter_ed_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "organization_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{organization_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("class_code", String(50), nullable=True),
+        Column("start_date", String(30), nullable=True),
+        Column("end_date", String(30), nullable=True),
+        Column("admit_source_code", Text(), nullable=True),
+        Column("discharge_disposition_code", Text(), nullable=True),
+        Column("identifier", Text(), nullable=True),
+    )
+    Index(f"ix_{encounter_ed_table_name}_encounter_id", encounter_ed.c.encounter_id)
+    Index(f"ix_{encounter_ed_table_name}_patient_id", encounter_ed.c.patient_id)
+    Index(f"ix_{encounter_ed_table_name}_organization_id", encounter_ed.c.organization_id)
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -231,4 +277,5 @@ def build_project_metadata(
             encounter=encounter,
             encounter_location=encounter_location,
         ),
+        encounter_ed=EncounterEDTables(encounter_ed=encounter_ed),
     )
