@@ -1,20 +1,22 @@
 # nl2sql2nl_mimic_fhir
 
-Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional normalizada e carga em ordem dependente.
+Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional normalizada, logging em arquivo e orquestração por dependências entre recursos.
 
 ## Visão geral
 
-Esta base atualmente processa dois arquivos FHIR:
+Esta base processa agora três arquivos FHIR:
 
 1. `data/MimicOrganization.ndjson.gz`
 2. `data/MimicLocation.ndjson.gz`
+3. `data/MimicPatient.ndjson.gz`
 
 A ordem de importação é obrigatória:
 
 1. `Organization`
 2. `Location`
+3. `Patient`
 
-O recurso `Location` referencia `Organization` por meio de `managingOrganization.reference`, então a pipeline cria a foreign key correspondente e carrega os dados na ordem correta dentro da mesma transação.
+O pipeline foi desenhado para crescer com novos recursos FHIR no futuro, preservando separação entre leitura, transformação, carga, schema e orquestração.
 
 ## Requisitos
 
@@ -60,15 +62,20 @@ Configurações não sensíveis ficam em YAML:
   - política de reset
   - política de registros inválidos
   - batch size padrão
-  - ordem de ingestão
 - `config/ingestion/organization.yaml`
-  - caminho do arquivo de Organization
+  - caminho do arquivo de `Organization`
   - batch size
-  - nomes das tabelas de Organization
+  - nomes das tabelas de `Organization`
 - `config/ingestion/location.yaml`
-  - caminho do arquivo de Location
+  - caminho do arquivo de `Location`
   - batch size
-  - nomes das tabelas de Location
+  - nomes das tabelas de `Location`
+- `config/ingestion/patient.yaml`
+  - caminho do arquivo de `Patient`
+  - batch size
+  - nomes das tabelas de `Patient`
+- `config/pipeline/resources.yaml`
+  - ordem oficial da pipeline
 
 ## Instalação
 
@@ -100,8 +107,12 @@ A execução principal segue esta ordem:
 2. criação das tabelas
 3. ingestão de `Organization`
 4. ingestão de `Location`
+5. ingestão de `Patient`
 
-Essa ordem é rígida porque `Location.managing_organization_id` aponta para `organization.id`.
+Essa ordem é rígida porque:
+
+- `Location.managing_organization_id` aponta para `organization.id`
+- `Patient.managing_organization_id` aponta para `organization.id`
 
 ## Modelagem
 
@@ -142,7 +153,50 @@ Essa ordem é rígida porque `Location.managing_organization_id` aponta para `or
   - `code`
   - `display`
 
-O parser de `managingOrganization.reference` aceita o formato FHIR `Organization/<id>` e extrai o identificador para persistência relacional.
+### Patient
+
+- `patient`
+  - `id`
+  - `resource_type`
+  - `gender`
+  - `birth_date`
+  - `managing_organization_id`
+- `patient_meta_profile`
+  - `patient_id`
+  - `profile`
+- `patient_name`
+  - `patient_id`
+  - `use`
+  - `family`
+- `patient_identifier`
+  - `patient_id`
+  - `system`
+  - `value`
+- `patient_communication_language_coding`
+  - `patient_id`
+  - `system`
+  - `code`
+- `patient_marital_status_coding`
+  - `patient_id`
+  - `system`
+  - `code`
+- `patient_race`
+  - `patient_id`
+  - `omb_category_system`
+  - `omb_category_code`
+  - `omb_category_display`
+  - `text`
+- `patient_ethnicity`
+  - `patient_id`
+  - `omb_category_system`
+  - `omb_category_code`
+  - `omb_category_display`
+  - `text`
+- `patient_birthsex`
+  - `patient_id`
+  - `value_code`
+
+O parser de `managingOrganization.reference` aceita o formato FHIR `Organization/<id>` e extrai o identificador para persistência relacional. As extensões de `Patient` são extraídas explicitamente para tabelas normalizadas.
 
 ## Logging
 
@@ -171,19 +225,31 @@ Exemplo de terminal:
 ```text
 2026-04-22 ... | INFO | __main__ | Logging configurado em .../logs/ingestion.log
 2026-04-22 ... | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo.
+2026-04-22 ... | INFO | src.pipelines.ingest_all | Ordem da pipeline: ('organization', 'location', 'patient')
 2026-04-22 ... | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-22 ... | INFO | src.pipelines.base | Processando arquivo .../data/MimicOrganization.ndjson.gz para recurso Organization
-2026-04-22 ... | INFO | src.pipelines.base | Resumo Organization: lidos=1 inseridos=1 ignorados=0 tempo=0.00s
-2026-04-22 ... | INFO | src.pipelines.base | Processando arquivo .../data/MimicLocation.ndjson.gz para recurso Location
-2026-04-22 ... | INFO | src.pipelines.base | Resumo Location: lidos=31 inseridos=31 ignorados=0 tempo=0.01s
-2026-04-22 ... | INFO | src.pipelines.ingest_all | Resumo final: organization_lidos=1 organization_inseridos=1 location_lidos=31 location_inseridos=31 tempo=0.06s tabelas=organization, organization_meta_profile, organization_identifier, organization_type_coding, location, location_meta_profile, location_physical_type_coding
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicOrganization.ndjson.gz para recurso Organization
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Organization: lidos=1 inseridos=1 ignorados=0 tempo=0.00s
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicLocation.ndjson.gz para recurso Location
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Location: lidos=31 inseridos=31 ignorados=0 tempo=0.01s
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicPatient.ndjson.gz para recurso Patient
+2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Patient: lidos=100 inseridos=100 ignorados=0 tempo=0.02s
+2026-04-22 ... | INFO | src.pipelines.ingest_all | Resumo final: ordem=('organization', 'location', 'patient') tempo=0.11s tabelas=organization, organization_meta_profile, organization_identifier, organization_type_coding, location, location_meta_profile, location_physical_type_coding, patient, patient_meta_profile, patient_name, patient_identifier, patient_communication_language_coding, patient_marital_status_coding, patient_race, patient_ethnicity, patient_birthsex
 ```
 
 ## Validação local
 
+Os testes de unidade ficam organizados em `tests/unit/`.
+
+Execute os testes de unidade com:
+
+```bash
+uv run pytest
+```
+
+Também é possível rodar checagem estática:
+
 ```bash
 uv run ruff check .
-uv run python -m unittest discover -s tests -v
 ```
 
 ## Próximos passos

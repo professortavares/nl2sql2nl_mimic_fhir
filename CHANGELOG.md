@@ -4,6 +4,52 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.3.0] - 2026-04-22
+
+### Adicionado
+
+- Suporte à ingestão de `data/MimicPatient.ndjson.gz`.
+- Pipeline orquestrada de recursos com ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+- Foreign key explícita entre `patient.managing_organization_id` e `organization.id`.
+- Novas tabelas normalizadas para `Patient`:
+  - `patient`
+  - `patient_meta_profile`
+  - `patient_name`
+  - `patient_identifier`
+  - `patient_communication_language_coding`
+  - `patient_marital_status_coding`
+  - `patient_race`
+  - `patient_ethnicity`
+  - `patient_birthsex`
+- Parser reutilizável para referências FHIR no formato `ResourceType/<id>`.
+- Parsers explícitos para as extensões FHIR de `Patient`:
+  - race
+  - ethnicity
+  - birthsex
+- Camada central de orquestração para reset, criação de schema e execução sequencial dos recursos.
+- Logging estruturado em arquivo e console com rotação, configurado em `config/logging.yaml`.
+- Arquivos YAML adicionais:
+  - `config/ingestion/patient.yaml`
+  - `config/pipeline/resources.yaml`
+- Testes de unidade com `pytest` para parser de referência, leitor NDJSON GZIP e transformers dos três recursos.
+- Atualização do `README.md` com a pipeline completa, ordem de importação, logs e testes.
+
+### Alterado
+
+- Refatoração da arquitetura para suportar crescimento com novos recursos FHIR sem acoplamento excessivo.
+- Recriação total do schema e das tabelas em cada execução, agora cobrindo `Organization`, `Location` e `Patient`.
+- Ajustes na camada de logging para manter saída consistente em `logs/ingestion.log`.
+- Atualização da configuração para incluir ordem oficial da pipeline e parâmetros de `Patient`.
+
+### Corrigido
+
+- Validação mais robusta de referências FHIR inválidas em `Location` e `Patient`.
+- Tratamento de falhas de integridade durante a persistência em lote.
+- Falhas de parsing de extensões de `Patient` agora são tratadas de forma controlada.
+
 ## [0.2.0] - 2026-04-22
 
 ### Adicionado
@@ -66,5 +112,4 @@ semântico `X.Y.Z`.
 uv sync --extra dev
 uv run python -m src.main
 ```
-
 
