@@ -1,5 +1,5 @@
 """
-Pipeline de ingestão do recurso FHIR Organization.
+Pipeline de ingestão do recurso FHIR Location.
 """
 
 from __future__ import annotations
@@ -9,41 +9,34 @@ from dataclasses import dataclass
 from sqlalchemy.engine import Connection
 
 from src.config.settings import ProjectSettings
-from src.ingestion.loaders.organization_loader import OrganizationLoader
+from src.ingestion.loaders.location_loader import LocationLoader
 from src.ingestion.readers.ndjson_gzip_reader import NdjsonGzipReader
-from src.ingestion.transformers.organization_transformer import OrganizationTransformer
+from src.ingestion.transformers.location_transformer import LocationTransformer
 from src.pipelines.base import ResourceIngestionSummary, ingest_ndjson_resource
 
 
 @dataclass(slots=True, frozen=True)
-class OrganizationPipelineSummary(ResourceIngestionSummary):
+class LocationPipelineSummary(ResourceIngestionSummary):
     """
-    Resumo específico da ingestão de Organization.
-    """
-
-
-class OrganizationIngestionPipeline:
-    """
-    Coordena leitura, transformação e persistência de Organization.
+    Resumo específico da ingestão de Location.
     """
 
-    def __init__(self, settings: ProjectSettings, loader: OrganizationLoader) -> None:
+
+class LocationIngestionPipeline:
+    """
+    Coordena leitura, transformação e persistência de Location.
+    """
+
+    def __init__(self, settings: ProjectSettings, loader: LocationLoader) -> None:
         """
         Inicializa o pipeline.
-
-        Parâmetros:
-        ----------
-        settings : ProjectSettings
-            Configurações consolidadas da aplicação.
-        loader : OrganizationLoader
-            Carregador responsável pela persistência de Organization.
         """
 
-        self._settings = settings.organization
+        self._settings = settings.location
         self._common_settings = settings.common
         self._loader = loader
         self._reader = NdjsonGzipReader(self._settings.input_path)
-        self._transformer = OrganizationTransformer()
+        self._transformer = LocationTransformer()
 
     @property
     def resource_name(self) -> str:
@@ -51,21 +44,11 @@ class OrganizationIngestionPipeline:
         Retorna o nome lógico do recurso.
         """
 
-        return "Organization"
+        return "Location"
 
-    def ingest(self, connection: Connection) -> OrganizationPipelineSummary:
+    def ingest(self, connection: Connection) -> LocationPipelineSummary:
         """
-        Executa a ingestão de Organization usando uma conexão já aberta.
-
-        Parâmetros:
-        ----------
-        connection : Connection
-            Conexão SQLAlchemy ativa dentro da transação.
-
-        Retorno:
-        -------
-        OrganizationPipelineSummary
-            Resumo da execução.
+        Executa a ingestão de Location usando uma conexão já aberta.
         """
 
         summary = ingest_ndjson_resource(
@@ -77,7 +60,7 @@ class OrganizationIngestionPipeline:
             skip_invalid_records=self._common_settings.skip_invalid_records,
             resource_name=self.resource_name,
         )
-        return OrganizationPipelineSummary(
+        return LocationPipelineSummary(
             resource_name=summary.resource_name,
             input_path=summary.input_path,
             records_read=summary.records_read,

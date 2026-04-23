@@ -1,8 +1,6 @@
 pipeline_name: ingest_organization
 input_path: data/MimicOrganization.ndjson.gz
 batch_size: 500
-reset_policy: drop_and_recreate
-skip_invalid_records: true
 table_names:
   organization: organization
   organization_meta_profile: organization_meta_profile

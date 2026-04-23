@@ -1,9 +1,8 @@
 """
-Leitura e validação das configurações da aplicação.
+Leitura e validação centralizadas das configurações da aplicação.
 
-Este módulo concentra a leitura do arquivo `.env` e dos YAMLs não sensíveis,
-mantendo credenciais fora do código-fonte e permitindo ajustes de pipeline sem
-alterar a implementação.
+As credenciais permanecem no `.env`, enquanto os parâmetros de pipeline,
+schema e logging ficam em arquivos YAML versionáveis.
 """
 
 from __future__ import annotations
@@ -14,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
-import yaml
+from src.config.yaml_loader import load_yaml_file
 
 _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -25,7 +24,7 @@ class ConfigurationError(ValueError):
 
 @dataclass(slots=True, frozen=True)
 class DatabaseSettings:
-    """Configuração de conexão e comportamento do banco de dados."""
+    """Configuração de conexão com o PostgreSQL."""
 
     host: str
     port: int
@@ -38,33 +37,75 @@ class DatabaseSettings:
 
 
 @dataclass(slots=True, frozen=True)
-class TableNames:
-    """Nomes físicos das tabelas usadas pelo pipeline de Organization."""
+class LoggingSettings:
+    """Configuração do logging da aplicação."""
+
+    log_dir: Path
+    log_file: str
+    level: str
+    console_enabled: bool
+    max_bytes: int
+    backup_count: int
+
+
+@dataclass(slots=True, frozen=True)
+class CommonIngestionSettings:
+    """Configurações comuns às ingestões FHIR."""
+
+    reset_policy: str
+    skip_invalid_records: bool
+    batch_size: int
+    ingestion_order: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OrganizationTableNames:
+    """Nomes físicos das tabelas de Organization."""
 
     organization: str
-    organization_meta_profile: str
-    organization_identifier: str
-    organization_type_coding: str
+    meta_profile: str
+    identifier: str
+    type_coding: str
+
+
+@dataclass(slots=True, frozen=True)
+class LocationTableNames:
+    """Nomes físicos das tabelas de Location."""
+
+    location: str
+    meta_profile: str
+    physical_type_coding: str
 
 
 @dataclass(slots=True, frozen=True)
 class OrganizationIngestionSettings:
-    """Configurações do pipeline de ingestão de Organization."""
+    """Configurações específicas da ingestão de Organization."""
 
     pipeline_name: str
     input_path: Path
     batch_size: int
-    reset_policy: str
-    skip_invalid_records: bool
-    table_names: TableNames
+    table_names: OrganizationTableNames
+
+
+@dataclass(slots=True, frozen=True)
+class LocationIngestionSettings:
+    """Configurações específicas da ingestão de Location."""
+
+    pipeline_name: str
+    input_path: Path
+    batch_size: int
+    table_names: LocationTableNames
 
 
 @dataclass(slots=True, frozen=True)
 class ProjectSettings:
-    """Agrupamento das configurações da aplicação."""
+    """Agrupa todas as configurações da aplicação."""
 
     database: DatabaseSettings
+    logging: LoggingSettings
+    common: CommonIngestionSettings
     organization: OrganizationIngestionSettings
+    location: LocationIngestionSettings
 
 
 def project_root() -> Path:
@@ -82,7 +123,7 @@ def project_root() -> Path:
 
 def load_dotenv_file(path: Path) -> None:
     """
-    Carrega variáveis de ambiente a partir de um arquivo `.env` simples.
+    Carrega variáveis de ambiente a partir de um arquivo `.env`.
 
     Parâmetros:
     ----------
@@ -94,7 +135,7 @@ def load_dotenv_file(path: Path) -> None:
     FileNotFoundError
         Quando o arquivo não existe.
     ConfigurationError
-        Quando o formato de uma linha é inválido.
+        Quando a linha está em formato inválido.
     """
 
     if not path.exists():
@@ -114,54 +155,9 @@ def load_dotenv_file(path: Path) -> None:
         os.environ.setdefault(key, value)
 
 
-def load_yaml_file(path: Path) -> dict[str, Any]:
-    """
-    Lê um arquivo YAML e retorna seu conteúdo como dicionário.
-
-    Parâmetros:
-    ----------
-    path : Path
-        Caminho do arquivo YAML.
-
-    Retorno:
-    -------
-    dict[str, Any]
-        Conteúdo carregado.
-
-    Exceções:
-    --------
-    FileNotFoundError
-        Quando o arquivo não existe.
-    ConfigurationError
-        Quando o conteúdo não é um mapeamento YAML válido.
-    """
-
-    if not path.exists():
-        raise FileNotFoundError(f"Arquivo de configuração não encontrado: {path}")
-
-    content = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    if not isinstance(content, dict):
-        raise ConfigurationError(f"O arquivo YAML deve conter um mapeamento: {path}")
-    return content
-
-
 def _require_string(data: Mapping[str, Any], key: str, *, source: Path) -> str:
     """
     Obtém uma string obrigatória de um mapeamento.
-
-    Parâmetros:
-    ----------
-    data : Mapping[str, Any]
-        Mapeamento de origem.
-    key : str
-        Chave esperada.
-    source : Path
-        Arquivo de origem usado nas mensagens de erro.
-
-    Retorno:
-    -------
-    str
-        Valor encontrado e validado.
     """
 
     value = data.get(key)
@@ -172,18 +168,7 @@ def _require_string(data: Mapping[str, Any], key: str, *, source: Path) -> str:
 
 def _require_bool(data: Mapping[str, Any], key: str, *, default: bool, source: Path) -> bool:
     """
-    Obtém um booleano opcional de um mapeamento.
-
-    Parâmetros:
-    ----------
-    data : Mapping[str, Any]
-        Mapeamento de origem.
-    key : str
-        Chave esperada.
-    default : bool
-        Valor padrão caso a chave não exista.
-    source : Path
-        Arquivo de origem usado nas mensagens de erro.
+    Obtém um valor booleano com fallback padrão.
     """
 
     value = data.get(key, default)
@@ -194,16 +179,7 @@ def _require_bool(data: Mapping[str, Any], key: str, *, default: bool, source: P
 
 def _require_int(data: Mapping[str, Any], key: str, *, source: Path) -> int:
     """
-    Obtém um inteiro obrigatório de um mapeamento.
-
-    Parâmetros:
-    ----------
-    data : Mapping[str, Any]
-        Mapeamento de origem.
-    key : str
-        Chave esperada.
-    source : Path
-        Arquivo de origem usado nas mensagens de erro.
+    Obtém um valor inteiro positivo de um mapeamento.
     """
 
     value = data.get(key)
@@ -222,18 +198,6 @@ def _require_int(data: Mapping[str, Any], key: str, *, source: Path) -> int:
 def _validate_identifier(name: str, *, label: str) -> str:
     """
     Valida um identificador SQL simples.
-
-    Parâmetros:
-    ----------
-    name : str
-        Nome do identificador.
-    label : str
-        Rótulo usado na mensagem de erro.
-
-    Retorno:
-    -------
-    str
-        Identificador validado.
     """
 
     if not _IDENTIFIER_PATTERN.fullmatch(name):
@@ -241,37 +205,144 @@ def _validate_identifier(name: str, *, label: str) -> str:
     return name
 
 
+def _resolve_path(root: Path, value: str) -> Path:
+    """
+    Resolve um caminho relativo à raiz do projeto.
+    """
+
+    candidate = Path(value)
+    if candidate.is_absolute():
+        return candidate
+    return (root / candidate).resolve()
+
+
+def _load_resource_tables_organization(
+    data: Mapping[str, Any],
+    *,
+    source: Path,
+) -> OrganizationTableNames:
+    """
+    Carrega os nomes físicos das tabelas de Organization.
+    """
+
+    tables = data.get("table_names")
+    if not isinstance(tables, Mapping):
+        raise ConfigurationError(f"O bloco 'table_names' é obrigatório em {source}")
+
+    return OrganizationTableNames(
+        organization=_validate_identifier(
+            _require_string(tables, "organization", source=source),
+            label="organization table",
+        ),
+        meta_profile=_validate_identifier(
+            _require_string(tables, "organization_meta_profile", source=source),
+            label="organization_meta_profile table",
+        ),
+        identifier=_validate_identifier(
+            _require_string(tables, "organization_identifier", source=source),
+            label="organization_identifier table",
+        ),
+        type_coding=_validate_identifier(
+            _require_string(tables, "organization_type_coding", source=source),
+            label="organization_type_coding table",
+        ),
+    )
+
+
+def _load_resource_tables_location(
+    data: Mapping[str, Any],
+    *,
+    source: Path,
+) -> LocationTableNames:
+    """
+    Carrega os nomes físicos das tabelas de Location.
+    """
+
+    tables = data.get("table_names")
+    if not isinstance(tables, Mapping):
+        raise ConfigurationError(f"O bloco 'table_names' é obrigatório em {source}")
+
+    return LocationTableNames(
+        location=_validate_identifier(
+            _require_string(tables, "location", source=source),
+            label="location table",
+        ),
+        meta_profile=_validate_identifier(
+            _require_string(tables, "location_meta_profile", source=source),
+            label="location_meta_profile table",
+        ),
+        physical_type_coding=_validate_identifier(
+            _require_string(tables, "location_physical_type_coding", source=source),
+            label="location_physical_type_coding table",
+        ),
+    )
+
+
+def _load_ingestion_settings(
+    data: Mapping[str, Any],
+    *,
+    source: Path,
+    root: Path,
+    default_batch_size: int,
+) -> tuple[str, Path, int]:
+    """
+    Extrai campos comuns de um YAML de ingestão.
+    """
+
+    pipeline_name = _require_string(data, "pipeline_name", source=source)
+    input_path = _resolve_path(root, _require_string(data, "input_path", source=source))
+    batch_size_value = data.get("batch_size", default_batch_size)
+    if batch_size_value == default_batch_size:
+        batch_size = default_batch_size
+    elif isinstance(batch_size_value, int) and batch_size_value > 0:
+        batch_size = batch_size_value
+    elif isinstance(batch_size_value, str):
+        try:
+            parsed_batch_size = int(batch_size_value)
+        except ValueError as exc:
+            raise ConfigurationError(f"Campo inteiro positivo inválido em {source}: batch_size") from exc
+        if parsed_batch_size <= 0:
+            raise ConfigurationError(f"Campo inteiro positivo inválido em {source}: batch_size")
+        batch_size = parsed_batch_size
+    else:
+        raise ConfigurationError(f"Campo inteiro positivo inválido em {source}: batch_size")
+    return pipeline_name, input_path, batch_size
+
+
 def load_project_settings(root: Path | None = None) -> ProjectSettings:
     """
-    Carrega as configurações do projeto a partir de `.env` e YAML.
+    Carrega as configurações do projeto a partir de `.env` e YAMLs.
 
     Parâmetros:
     ----------
     root : Path | None, default = None
-        Raiz do projeto. Quando omitida, a função descobre a raiz a partir do
-        próprio módulo.
+        Raiz do projeto.
 
     Retorno:
     -------
     ProjectSettings
         Configurações consolidadas.
-
-    Exceções:
-    --------
-    FileNotFoundError
-        Quando `.env` ou os YAMLs não existem.
-    ConfigurationError
-        Quando algum campo obrigatório estiver ausente ou inválido.
     """
 
     project_dir = root or project_root()
     load_dotenv_file(project_dir / ".env")
 
     database_yaml_path = project_dir / "config" / "database.yaml"
+    logging_yaml_path = project_dir / "config" / "logging.yaml"
+    common_yaml_path = project_dir / "config" / "ingestion" / "common.yaml"
     organization_yaml_path = project_dir / "config" / "ingestion" / "organization.yaml"
+    location_yaml_path = project_dir / "config" / "ingestion" / "location.yaml"
 
     database_yaml = load_yaml_file(database_yaml_path)
+    logging_yaml = load_yaml_file(logging_yaml_path)
+    common_yaml = load_yaml_file(common_yaml_path)
     organization_yaml = load_yaml_file(organization_yaml_path)
+    location_yaml = load_yaml_file(location_yaml_path)
+
+    schema_name = _validate_identifier(
+        _require_string(database_yaml, "schema_name", source=database_yaml_path),
+        label="schema_name",
+    )
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=project_dir / ".env"),
@@ -279,10 +350,7 @@ def load_project_settings(root: Path | None = None) -> ProjectSettings:
         database=_require_string(os.environ, "POSTGRES_DB", source=project_dir / ".env"),
         user=_require_string(os.environ, "POSTGRES_USER", source=project_dir / ".env"),
         password=_require_string(os.environ, "POSTGRES_PASSWORD", source=project_dir / ".env"),
-        schema_name=_validate_identifier(
-            _require_string(database_yaml, "schema_name", source=database_yaml_path),
-            label="schema_name",
-        ),
+        schema_name=schema_name,
         echo=_require_bool(database_yaml, "echo", default=False, source=database_yaml_path),
         pool_pre_ping=_require_bool(
             database_yaml,
@@ -292,68 +360,80 @@ def load_project_settings(root: Path | None = None) -> ProjectSettings:
         ),
     )
 
-    table_names_data = organization_yaml.get("table_names")
-    if not isinstance(table_names_data, dict):
-        raise ConfigurationError(
-            f"O bloco 'table_names' é obrigatório em {organization_yaml_path}"
-        )
+    reset_policy = _require_string(common_yaml, "reset_policy", source=common_yaml_path)
+    skip_invalid_records = _require_bool(
+        common_yaml,
+        "skip_invalid_records",
+        default=True,
+        source=common_yaml_path,
+    )
+    batch_size_default = _require_int(common_yaml, "batch_size", source=common_yaml_path)
+    ingestion_order_raw = common_yaml.get("ingestion_order")
+    if not isinstance(ingestion_order_raw, list) or not all(
+        isinstance(item, str) and item.strip() for item in ingestion_order_raw
+    ):
+        raise ConfigurationError(f"Campo 'ingestion_order' inválido em {common_yaml_path}")
+    ingestion_order = tuple(item.strip() for item in ingestion_order_raw)
 
-    table_names = TableNames(
-        organization=_validate_identifier(
-            _require_string(table_names_data, "organization", source=organization_yaml_path),
-            label="organization table",
-        ),
-        organization_meta_profile=_validate_identifier(
-            _require_string(
-                table_names_data,
-                "organization_meta_profile",
-                source=organization_yaml_path,
-            ),
-            label="organization_meta_profile table",
-        ),
-        organization_identifier=_validate_identifier(
-            _require_string(
-                table_names_data,
-                "organization_identifier",
-                source=organization_yaml_path,
-            ),
-            label="organization_identifier table",
-        ),
-        organization_type_coding=_validate_identifier(
-            _require_string(
-                table_names_data,
-                "organization_type_coding",
-                source=organization_yaml_path,
-            ),
-            label="organization_type_coding table",
-        ),
+    common = CommonIngestionSettings(
+        reset_policy=reset_policy,
+        skip_invalid_records=skip_invalid_records,
+        batch_size=batch_size_default,
+        ingestion_order=ingestion_order,
     )
 
-    input_path = _require_string(organization_yaml, "input_path", source=organization_yaml_path)
-    resolved_input_path = Path(input_path)
-    if not resolved_input_path.is_absolute():
-        resolved_input_path = (project_dir / resolved_input_path).resolve()
-
+    organization_tables = _load_resource_tables_organization(
+        organization_yaml,
+        source=organization_yaml_path,
+    )
+    organization_name, organization_input_path, organization_batch_size = _load_ingestion_settings(
+        organization_yaml,
+        source=organization_yaml_path,
+        root=project_dir,
+        default_batch_size=batch_size_default,
+    )
     organization = OrganizationIngestionSettings(
-        pipeline_name=_require_string(
-            organization_yaml,
-            "pipeline_name",
-            source=organization_yaml_path,
-        ),
-        input_path=resolved_input_path,
-        batch_size=_require_int(organization_yaml, "batch_size", source=organization_yaml_path),
-        reset_policy=_require_string(
-            organization_yaml,
-            "reset_policy",
-            source=organization_yaml_path,
-        ),
-        skip_invalid_records=_require_bool(
-            organization_yaml,
-            "skip_invalid_records",
-            default=True,
-            source=organization_yaml_path,
-        ),
-        table_names=table_names,
+        pipeline_name=organization_name,
+        input_path=organization_input_path,
+        batch_size=organization_batch_size,
+        table_names=organization_tables,
     )
 
-    return ProjectSettings(database=database, organization=organization)
+    location_tables = _load_resource_tables_location(
+        location_yaml,
+        source=location_yaml_path,
+    )
+    location_name, location_input_path, location_batch_size = _load_ingestion_settings(
+        location_yaml,
+        source=location_yaml_path,
+        root=project_dir,
+        default_batch_size=batch_size_default,
+    )
+    location = LocationIngestionSettings(
+        pipeline_name=location_name,
+        input_path=location_input_path,
+        batch_size=location_batch_size,
+        table_names=location_tables,
+    )
+
+    logging_settings = LoggingSettings(
+        log_dir=_resolve_path(project_dir, _require_string(logging_yaml, "log_dir", source=logging_yaml_path)),
+        log_file=_require_string(logging_yaml, "log_file", source=logging_yaml_path),
+        level=_require_string(logging_yaml, "level", source=logging_yaml_path),
+        console_enabled=_require_bool(
+            logging_yaml,
+            "console_enabled",
+            default=True,
+            source=logging_yaml_path,
+        ),
+        max_bytes=_require_int(logging_yaml, "max_bytes", source=logging_yaml_path),
+        backup_count=_require_int(logging_yaml, "backup_count", source=logging_yaml_path),
+    )
+
+    return ProjectSettings(
+        database=database,
+        logging=logging_settings,
+        common=common,
+        organization=organization,
+        location=location,
+    )
