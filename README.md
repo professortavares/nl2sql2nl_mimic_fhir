@@ -23,6 +23,11 @@ O recurso `Location` referencia `Organization` por meio de `managingOrganization
 - PostgreSQL local acessível em `localhost:5432`
 - Docker, se o banco estiver sendo executado em container
 
+## Fontes de dados e documentação
+
+- Download dos arquivos de ingestão: https://physionet.org/content/mimic-iv-fhir-demo/2.1.0/
+- Documentação do MIMIC FHIR: https://mimic.mit.edu/fhir/index.html
+
 ## Configuração
 
 ### `.env`
@@ -189,4 +194,3 @@ A base foi desenhada para facilitar novas ingestões FHIR:
 - adicionar transformer e loader específicos;
 - ligar tudo em um pipeline novo;
 - incluir o recurso na ordem de ingestão quando houver dependência.
-
