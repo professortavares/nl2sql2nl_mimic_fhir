@@ -2,68 +2,60 @@
 
 ## 2026-04-22
 
-### Adicionado
+### Organização inicial
 
-- Criação do arquivo `.env` na raiz do projeto com as credenciais PostgreSQL locais exigidas para a ingestão.
-- Criação dos YAMLs de configuração não sensível:
-  - `config/database.yaml`
-  - `config/ingestion/organization.yaml`
-- Implementação de uma base modular em `src/` para ingestão do recurso FHIR `Organization`.
-- Leitura incremental do arquivo `data/MimicOrganization.ndjson.gz` linha a linha, sem carregamento integral em memória.
-- Validação mínima dos registros:
-  - `resourceType` deve ser `Organization`
-  - `id` é obrigatório
-  - `active`, quando presente, deve ser booleano
-- Criação e recriação explícita do schema PostgreSQL a cada execução, com política padrão `drop_and_recreate`.
-- Persistência transacional com rollback automático em caso de falha.
-- Logging de progresso por lote e resumo final da execução.
-- Separação por camadas:
-  - configuração
-  - conexão com banco
-  - definição de schema
-  - leitura
-  - transformação
-  - carga
-  - pipeline
-  - entrada principal
-- Adição das dependências mínimas necessárias no `pyproject.toml`:
+- Criação do pipeline inicial para `Organization`.
+- Criação do arquivo `.env` na raiz com credenciais PostgreSQL locais.
+- Criação de configuração não sensível em YAML para banco e ingestão de `Organization`.
+- Implementação de leitura streaming do arquivo `data/MimicOrganization.ndjson.gz`.
+- Criação do schema relacional normalizado para `Organization`.
+- Criação de execução transacional com reset completo do schema a cada run.
+- Adição de testes básicos para leitor e transformador de `Organization`.
+
+### Expansão para Location
+
+- Suporte à ingestão de `data/MimicLocation.ndjson.gz`.
+- Ordem obrigatória de ingestão consolidada:
+  1. `Organization`
+  2. `Location`
+- Criação de foreign key explícita de `location.managing_organization_id` para `organization.id`.
+- Implementação do parser robusto para `managingOrganization.reference` no formato `Organization/<id>`.
+- Criação das tabelas normalizadas de `Location`:
+  - `location`
+  - `location_meta_profile`
+  - `location_physical_type_coding`
+- Refatoração da orquestração para um pipeline principal único que:
+  - reseta o schema;
+  - cria as tabelas;
+  - ingere `Organization`;
+  - ingere `Location`.
+- Criação de logging em arquivo e console com rotação, configurado em `config/logging.yaml`.
+- Criação dos YAMLs adicionais:
+  - `config/ingestion/common.yaml`
+  - `config/ingestion/location.yaml`
+  - `config/logging.yaml`
+- Atualização do `README.md` com instruções de instalação, execução, ordem de ingestão, logs e modelagem.
+- Inclusão de testes para o parser de referência FHIR e transformação de `Location`.
+
+### Dependências e infraestrutura
+
+- Manutenção do stack leve com:
   - `sqlalchemy`
   - `psycopg[binary]`
   - `pyyaml`
-  - `ruff` como dependência opcional de desenvolvimento
-
-### Modelagem
-
-- Mantida a tabela principal `organization` com os campos base do recurso.
-- Criadas tabelas normalizadas separadas para estruturas repetidas:
-  - `organization_meta_profile`
-  - `organization_identifier`
-  - `organization_type_coding`
-- A modelagem evita JSON bruto como persistência principal e preserva a repetição natural das listas FHIR.
+- Geração/atualização do `uv.lock` para congelar versões compatíveis.
+- Atualização do `.gitignore` para excluir a pasta `logs/`.
 
 ### Execução
 
-1. Instalar dependências:
+```bash
+uv sync --extra dev
+uv run python -m src.main
+```
 
-   ```bash
-   uv sync --extra dev
-   ```
+### Resultado validado
 
-2. Executar a ingestão:
-
-   ```bash
-   uv run python -m src.main
-   ```
-
-3. Opcionalmente, executar o atalho:
-
-   ```bash
-   uv run python main.py
-   ```
-
-### Observações
-
-- O comportamento padrão é destruir e recriar o schema/tabelas a cada execução.
-- O caminho de entrada padrão é `data/MimicOrganization.ndjson.gz`.
-- A implementação foi desenhada para servir de base para novos pipelines FHIR no mesmo padrão modular.
+- `Organization` carregado com 1 registro principal.
+- `Location` carregado com 31 registros principais.
+- As tabelas dependentes foram persistidas corretamente dentro da mesma transação.
 

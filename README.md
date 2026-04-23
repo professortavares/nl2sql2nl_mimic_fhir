@@ -1,84 +1,106 @@
 # nl2sql2nl_mimic_fhir
 
-Pipeline em Python para ingerir o arquivo `data/MimicOrganization.ndjson.gz` em PostgreSQL local, com modelagem relacional normalizada para recursos FHIR `Organization`.
+Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional normalizada e carga em ordem dependente.
 
 ## Visão geral
 
-Este projeto foi estruturado para servir como base de ingestões FHIR futuras. A implementação atual:
+Esta base atualmente processa dois arquivos FHIR:
 
-- lê o arquivo `MimicOrganization.ndjson.gz` linha a linha;
-- valida os registros de forma mínima;
-- recria o schema e as tabelas a cada execução;
-- persiste os dados em PostgreSQL de forma transacional;
-- separa configuração, schema, leitura, transformação, carga e orquestração em módulos distintos;
-- registra logs claros e um resumo final da execução.
+1. `data/MimicOrganization.ndjson.gz`
+2. `data/MimicLocation.ndjson.gz`
+
+A ordem de importação é obrigatória:
+
+1. `Organization`
+2. `Location`
+
+O recurso `Location` referencia `Organization` por meio de `managingOrganization.reference`, então a pipeline cria a foreign key correspondente e carrega os dados na ordem correta dentro da mesma transação.
 
 ## Requisitos
 
 - Python 3.13 ou superior
 - `uv`
 - PostgreSQL local acessível em `localhost:5432`
-- Docker, se você estiver subindo o banco por container
+- Docker, se o banco estiver sendo executado em container
 
-## Estrutura principal
+## Configuração
 
-- `.env`: credenciais de conexão com o PostgreSQL
-- `config/database.yaml`: configurações não sensíveis do banco
-- `config/ingestion/organization.yaml`: configurações do pipeline
-- `src/`: código-fonte da ingestão
-- `data/MimicOrganization.ndjson.gz`: arquivo de entrada
+### `.env`
+
+As credenciais ficam apenas no `.env` da raiz do projeto:
+
+```dotenv
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=app_mimic_fhir
+POSTGRES_USER=app_mimic_fhir
+POSTGRES_PASSWORD=app_mimic_fhir
+```
+
+Também existe um template sem valores em [`.env.example`](/home/leonardo/Documentos/github/nl2sql2nl_mimic_fhir/.env.example).
+
+### YAMLs em `config/`
+
+Configurações não sensíveis ficam em YAML:
+
+- `config/database.yaml`
+  - schema PostgreSQL
+  - flags de conexão
+- `config/logging.yaml`
+  - diretório de log
+  - arquivo de log
+  - nível
+  - rotação
+- `config/ingestion/common.yaml`
+  - política de reset
+  - política de registros inválidos
+  - batch size padrão
+  - ordem de ingestão
+- `config/ingestion/organization.yaml`
+  - caminho do arquivo de Organization
+  - batch size
+  - nomes das tabelas de Organization
+- `config/ingestion/location.yaml`
+  - caminho do arquivo de Location
+  - batch size
+  - nomes das tabelas de Location
 
 ## Instalação
 
-1. Instale as dependências do projeto:
+Instale as dependências com:
 
-   ```bash
-   uv sync --extra dev
-   ```
-
-2. Verifique se o arquivo `.env` existe na raiz do projeto com estas variáveis:
-
-   ```dotenv
-   POSTGRES_HOST=localhost
-   POSTGRES_PORT=5432
-   POSTGRES_DB=app_mimic_fhir
-   POSTGRES_USER=app_mimic_fhir
-   POSTGRES_PASSWORD=app_mimic_fhir
-   ```
-
-3. Confirme que o arquivo de entrada existe:
-
-   ```text
-   data/MimicOrganization.ndjson.gz
-   ```
+```bash
+uv sync --extra dev
+```
 
 ## Execução
 
-Execute a ingestão com:
+Execute a pipeline completa com:
 
 ```bash
 uv run python -m src.main
 ```
 
-Também é possível usar o atalho:
+Também é possível usar:
 
 ```bash
 uv run python main.py
 ```
 
-O pipeline vai:
+## Ordem de importação
 
-1. abrir conexão com o PostgreSQL;
-2. destruir o schema de ingestão configurado;
-3. recriar a estrutura de tabelas;
-4. ler o NDJSON gzip linha a linha;
-5. transformar os recursos `Organization`;
-6. inserir os dados em lote dentro de uma transação;
-7. exibir um resumo final no terminal.
+A execução principal segue esta ordem:
 
-## Modelagem adotada
+1. reset completo do schema relacionado
+2. criação das tabelas
+3. ingestão de `Organization`
+4. ingestão de `Location`
 
-O recurso `Organization` foi dividido em tabelas normalizadas:
+Essa ordem é rígida porque `Location.managing_organization_id` aponta para `organization.id`.
+
+## Modelagem
+
+### Organization
 
 - `organization`
   - `id`
@@ -98,68 +120,73 @@ O recurso `Organization` foi dividido em tabelas normalizadas:
   - `code`
   - `display`
 
-Essa abordagem evita persistir tudo como JSON bruto e preserva a estrutura repetida do FHIR de maneira relacional.
+### Location
 
-## Configuração
+- `location`
+  - `id`
+  - `resource_type`
+  - `name`
+  - `status`
+  - `managing_organization_id`
+- `location_meta_profile`
+  - `location_id`
+  - `profile`
+- `location_physical_type_coding`
+  - `location_id`
+  - `system`
+  - `code`
+  - `display`
 
-As configurações não sensíveis ficam em YAML:
+O parser de `managingOrganization.reference` aceita o formato FHIR `Organization/<id>` e extrai o identificador para persistência relacional.
 
-- `config/database.yaml`
-  - nome do schema PostgreSQL
-  - flags de conexão
-- `config/ingestion/organization.yaml`
-  - nome do pipeline
-  - caminho padrão do arquivo de entrada
-  - tamanho do batch
-  - política de reset
-  - nomes das tabelas
+## Logging
 
-As credenciais ficam exclusivamente no `.env`.
+O logging é salvo em arquivo e também pode ir para o console:
 
-## Dependências
+- diretório: `logs/`
+- arquivo: `logs/ingestion.log`
 
-Dependências principais:
+O arquivo é rotacionado usando a biblioteca padrão `logging.handlers`.
 
-- `sqlalchemy`
-- `psycopg[binary]`
-- `pyyaml`
+## Reset total
 
-Dependência opcional de desenvolvimento:
+Cada execução:
 
-- `ruff`
+1. abre uma conexão com o PostgreSQL;
+2. derruba o schema configurado;
+3. recria o schema e todas as tabelas;
+4. insere os dados novamente.
+
+O comportamento padrão é `drop_and_recreate`.
 
 ## Saída esperada
 
-Exemplo de execução bem-sucedida:
+Exemplo de terminal:
 
 ```text
-2026-04-22 ... | INFO | src.pipelines.ingest_organization | Iniciando ingestão ingest_organization para o arquivo .../data/MimicOrganization.ndjson.gz
-2026-04-22 ... | INFO | src.pipelines.ingest_organization | Lote final persistido: organizations=1 meta_profiles=1 identifiers=1 type_codings=1
-2026-04-22 ... | INFO | src.pipelines.ingest_organization | Resumo: lidos=1 inseridos=1 ignorados=0 tempo=0.05s tabelas=organization, organization_meta_profile, organization_identifier, organization_type_coding
-2026-04-22 ... | INFO | __main__ | Execução concluída com sucesso: pipeline=ingest_organization registros_lidos=1 registros_inseridos=1 tempo=0.05s
+2026-04-22 ... | INFO | __main__ | Logging configurado em .../logs/ingestion.log
+2026-04-22 ... | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo.
+2026-04-22 ... | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
+2026-04-22 ... | INFO | src.pipelines.base | Processando arquivo .../data/MimicOrganization.ndjson.gz para recurso Organization
+2026-04-22 ... | INFO | src.pipelines.base | Resumo Organization: lidos=1 inseridos=1 ignorados=0 tempo=0.00s
+2026-04-22 ... | INFO | src.pipelines.base | Processando arquivo .../data/MimicLocation.ndjson.gz para recurso Location
+2026-04-22 ... | INFO | src.pipelines.base | Resumo Location: lidos=31 inseridos=31 ignorados=0 tempo=0.01s
+2026-04-22 ... | INFO | src.pipelines.ingest_all | Resumo final: organization_lidos=1 organization_inseridos=1 location_lidos=31 location_inseridos=31 tempo=0.06s tabelas=organization, organization_meta_profile, organization_identifier, organization_type_coding, location, location_meta_profile, location_physical_type_coding
 ```
 
 ## Validação local
-
-Você pode verificar a qualidade do código com:
 
 ```bash
 uv run ruff check .
 uv run python -m unittest discover -s tests -v
 ```
 
-## Troubleshooting
-
-- Se a execução falhar por conexão, verifique se o PostgreSQL está ativo e escutando em `localhost:5432`.
-- Se o arquivo de entrada não for encontrado, confirme o caminho `data/MimicOrganization.ndjson.gz`.
-- Se o `schema_name` ou nomes de tabelas forem alterados, mantenha identificadores válidos para PostgreSQL.
-
 ## Próximos passos
 
-A base atual foi desenhada para facilitar novas ingestões FHIR com o mesmo padrão:
+A base foi desenhada para facilitar novas ingestões FHIR:
 
-- criar um novo YAML em `config/ingestion/`;
-- reutilizar a camada de conexão e schema;
-- implementar um novo transformer e loader;
-- adicionar um novo pipeline em `src/pipelines/`.
+- criar um YAML por novo recurso;
+- adicionar transformer e loader específicos;
+- ligar tudo em um pipeline novo;
+- incluir o recurso na ordem de ingestão quando houver dependência.
 
