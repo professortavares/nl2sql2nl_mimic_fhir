@@ -4,19 +4,30 @@ Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL 
 
 ## Visão Geral
 
-Esta fase do projeto processa exatamente três arquivos:
+O projeto está organizado em fases de ingestão.
+
+### Fase 1
+
+Arquivos já suportados:
 
 1. `data/MimicOrganization.ndjson.gz`
 2. `data/MimicLocation.ndjson.gz`
 3. `data/MimicPatient.ndjson.gz`
+
+### Fase 2
+
+Novo arquivo suportado nesta entrega:
+
+4. `data/MimicEncounter.ndjson.gz`
 
 A ordem de importação é obrigatória:
 
 1. `Organization`
 2. `Location`
 3. `Patient`
+4. `Encounter`
 
-A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. A implementação foi desenhada para facilitar novas fases com outros recursos FHIR, sem carregar agora tabelas auxiliares desnecessárias.
+A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. O desenho continua preparado para novas fases sem exigir acoplamento excessivo entre recursos.
 
 ## Requisitos
 
@@ -72,6 +83,11 @@ As configurações não sensíveis ficam versionadas em YAML:
   - caminho do arquivo de `Patient`
   - batch size
   - nome físico da tabela
+- `config/ingestion/encounter.yaml`
+  - caminho do arquivo de `Encounter`
+  - batch size
+  - nome físico da tabela principal
+  - nome físico da tabela auxiliar de localizações
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -106,6 +122,7 @@ A execução principal segue exatamente esta ordem:
 3. ingestão de `Organization`
 4. ingestão de `Location`
 5. ingestão de `Patient`
+6. ingestão de `Encounter`
 
 ## Modelagem Final
 
@@ -114,32 +131,11 @@ A execução principal segue exatamente esta ordem:
 - `id` `PK`
 - `name`
 
-Campos ignorados nesta fase:
-
-- `resourceType`
-- `active`
-
-Tabelas removidas:
-
-- `organization_identifier`
-- `organization_meta_profile`
-- `organization_type_coding`
-
 ### Tabela `location`
 
 - `id` `PK`
 - `name`
 - `managing_organization_id` `FK -> organization.id` `nullable`
-
-Campos ignorados nesta fase:
-
-- `resourceType`
-- `status`
-
-Tabelas removidas:
-
-- `location_meta_profile`
-- `location_physical_type_coding`
 
 ### Tabela `patient`
 
@@ -154,22 +150,27 @@ Tabelas removidas:
 - `birthsex`
 - `managing_organization_id` `FK -> organization.id` `nullable`
 
-Campos ignorados nesta fase:
+### Tabela `encounter`
 
-- `resourceType`
-- `meta.profile`
-- `communication.language.coding`
+- `id` `PK`
+- `patient_id` `FK -> patient.id` `nullable`
+- `organization_id` `FK -> organization.id` `nullable`
+- `status`
+- `class_code`
+- `start_date`
+- `end_date`
+- `priority_code`
+- `service_type_code`
+- `admit_source_code`
+- `discharge_disposition_code`
+- `identifier`
 
-Tabelas removidas:
+### Tabela `encounter_location`
 
-- `patient_meta_profile`
-- `patient_name`
-- `patient_identifier`
-- `patient_communication_language_coding`
-- `patient_marital_status_coding`
-- `patient_race`
-- `patient_ethnicity`
-- `patient_birthsex`
+- `encounter_id` `FK -> encounter.id`
+- `location_id` `FK -> location.id` `nullable`
+- `start_date`
+- `end_date`
 
 ## Estratégia De Consolidação
 
@@ -180,6 +181,9 @@ Isso vale para:
 - `name[*].family`
 - `identifier[*].value`
 - `maritalStatus.coding[*].code`
+- `priority.coding[*].code`
+- `serviceType.coding[*].code`
+- `location[*].location.reference`
 
 As extensões US Core de `Patient` também foram simplificadas:
 
@@ -187,14 +191,20 @@ As extensões US Core de `Patient` também foram simplificadas:
 - ethnicity: `text`
 - birthsex: `valueCode`
 
-Essa decisão foi implementada em código e documentada para facilitar manutenção futura.
+No `Encounter`, a referência `serviceProvider.reference` é usada como fonte preferencial para `organization_id`. O campo `identifier[*].assigner.reference` é observado no dado, mas não é materializado nesta fase.
 
 ## Relacionamentos
 
 - `location.managing_organization_id -> organization.id`
 - `patient.managing_organization_id -> organization.id`
+- `encounter.patient_id -> patient.id`
+- `encounter.organization_id -> organization.id`
+- `encounter_location.encounter_id -> encounter.id`
+- `encounter_location.location_id -> location.id`
 
-Se a referência estiver ausente, a coluna permanece nula. Se existir, o valor precisa seguir o formato FHIR `Organization/<id>`. O parser reutilizável de referência fica em `src/ingestion/parsers/fhir_reference_parser.py`.
+Se a referência estiver ausente, a coluna permanece nula quando isso fizer sentido. Se existir, o valor precisa seguir o formato FHIR correto. O parser reutilizável de referências fica em `src/ingestion/parsers/fhir_reference_parser.py`.
+
+O diagrama ASCII das relações está documentado em [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md).
 
 ## Logging
 
@@ -212,7 +222,7 @@ Cada execução:
 1. abre uma conexão com o PostgreSQL;
 2. derruba o schema configurado;
 3. recria o schema e as tabelas;
-4. ingere os três recursos novamente.
+4. ingere os recursos novamente.
 
 O comportamento padrão é `drop_and_recreate`.
 
@@ -228,7 +238,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location` e `Patient`
+- transformers de `Organization`, `Location`, `Patient` e `Encounter`
 
 ## Entrada Principal
 
@@ -244,18 +254,18 @@ Exemplo de terminal:
 
 ```text
 2026-04-23 12:00:00,000 | INFO | src.main | Logging configurado em /path/to/logs/ingestion.log
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... tempo=...
+2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... tempo=...
 ```
 
 Exemplo de log em arquivo:
 
 ```text
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
 2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicOrganization.ndjson.gz para recurso Organization
-2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo Organization: lidos=... inseridos=... ignorados=... tempo=... tabelas={'organization': ...}
+2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo Encounter: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter': ..., 'encounter_location': ...}
 ```
 
 ## Evolução Futura

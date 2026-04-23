@@ -1,5 +1,5 @@
 """
-Pipeline principal que orquestra a ingestão de Organization, Location e Patient.
+Pipeline principal que orquestra a ingestão de Organization, Location, Patient e Encounter.
 """
 
 from __future__ import annotations
@@ -16,9 +16,11 @@ from src.db.connection import create_engine_from_settings
 from src.db.reset import reset_schema
 from src.db.schema import build_project_metadata
 from src.ingestion.loaders.location_loader import LocationLoader
+from src.ingestion.loaders.encounter_loader import EncounterLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
 from src.pipelines.base_resource_pipeline import ResourceIngestionSummary
+from src.pipelines.ingest_encounter import EncounterIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
 from src.pipelines.ingest_patient import PatientIngestionPipeline
@@ -54,11 +56,14 @@ class IngestAllPipeline:
             settings.organization.table_name,
             settings.location.table_name,
             settings.patient.table_name,
+            settings.encounter.table_name,
+            settings.encounter.auxiliary_table_name or "encounter_location",
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
         self._location_loader = LocationLoader(tables.location)
         self._patient_loader = PatientLoader(tables.patient)
+        self._encounter_loader = EncounterLoader(tables.encounter)
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
                 settings=settings,
@@ -72,6 +77,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._patient_loader,
             ),
+            "encounter": EncounterIngestionPipeline(
+                settings=settings,
+                loader=self._encounter_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -81,9 +90,14 @@ class IngestAllPipeline:
 
         if self._settings.common.reset_policy != "drop_and_recreate":
             raise ValueError("A política de reset suportada é 'drop_and_recreate'.")
-        if self._settings.resources.execution_order != ("organization", "location", "patient"):
+        if self._settings.resources.execution_order != (
+            "organization",
+            "location",
+            "patient",
+            "encounter",
+        ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter')."
             )
 
         started_at = perf_counter()

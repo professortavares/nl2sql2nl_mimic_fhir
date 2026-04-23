@@ -28,6 +28,9 @@ class BatchInsertResult(Protocol):
 
     primary_rows: int
 
+    def table_counts(self) -> dict[str, int]:
+        """Retorna a contagem de linhas inseridas por tabela."""
+
 
 class BatchLoader(Protocol[TTransformed]):
     """
@@ -131,7 +134,7 @@ def ingest_ndjson_resource(
         batch.append(transformed)
         if len(batch) >= batch_size:
             batch_result = _insert_batch(connection, loader, batch, resource_name)
-            batch_table_counts = _table_counts_for_loader(loader, batch_result)
+            batch_table_counts = batch_result.table_counts()
             records_inserted += batch_result.primary_rows
             table_counts = _merge_counts(table_counts, batch_table_counts)
             LOGGER.info(
@@ -144,7 +147,7 @@ def ingest_ndjson_resource(
 
     if batch:
         batch_result = _insert_batch(connection, loader, batch, resource_name)
-        batch_table_counts = _table_counts_for_loader(loader, batch_result)
+        batch_table_counts = batch_result.table_counts()
         records_inserted += batch_result.primary_rows
         table_counts = _merge_counts(table_counts, batch_table_counts)
         LOGGER.info(
@@ -201,23 +204,3 @@ def _merge_counts(current: dict[str, int], update: dict[str, int]) -> dict[str, 
     for table_name, count in update.items():
         merged[table_name] = merged.get(table_name, 0) + count
     return merged
-
-
-def _table_counts_for_loader(loader: BatchLoader[Any], batch_result: BatchInsertResult) -> dict[str, int]:
-    """
-    Monta a contagem de tabelas com base no nome físico exposto pelo loader.
-    """
-
-    table_name = getattr(getattr(loader, "tables"), "organization", None)
-    if table_name is not None:
-        return {table_name.name: batch_result.primary_rows}
-
-    table_name = getattr(getattr(loader, "tables"), "location", None)
-    if table_name is not None:
-        return {table_name.name: batch_result.primary_rows}
-
-    table_name = getattr(getattr(loader, "tables"), "patient", None)
-    if table_name is not None:
-        return {table_name.name: batch_result.primary_rows}
-
-    raise AttributeError("Loader não expõe uma tabela reconhecida.")

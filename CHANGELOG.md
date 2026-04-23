@@ -4,6 +4,40 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.5.0] - 2026-04-23
+
+### Adicionado
+
+- Início da segunda fase de ingestão com suporte ao arquivo `data/MimicEncounter.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+- Nova tabela principal `encounter` com FKs para:
+  - `patient.id`
+  - `organization.id`
+- Nova tabela auxiliar `encounter_location` com FKs para:
+  - `encounter.id`
+  - `location.id`
+- Transformer e loader dedicados para `Encounter`.
+- Testes de unidade para o transformer de `Encounter`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com diagrama ASCII dos relacionamentos.
+- Atualização do `README.md` para documentar as duas fases de ingestão e os relacionamentos de `Encounter`.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/encounter.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `encounter` e `encounter_location`.
+- Expansão do resumo final de ingestão para contemplar `Encounter`.
+- Consolidação da documentação da modelagem relacional simplificada da fase 2.
+
+### Corrigido
+
+- Tratamento de referências FHIR em `Encounter.subject.reference`, `Encounter.location[*].location.reference` e `Encounter.serviceProvider.reference`.
+- Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
+
 ## [0.4.0] - 2026-04-23
 
 ### Adicionado

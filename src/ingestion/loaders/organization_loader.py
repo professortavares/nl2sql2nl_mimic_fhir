@@ -18,12 +18,12 @@ class OrganizationBatchInsertCounts:
 
     primary_rows: int
 
-    def table_counts(self, table_name: str) -> dict[str, int]:
+    def table_counts(self) -> dict[str, int]:
         """
         Retorna a contagem de linhas por tabela.
         """
 
-        return {table_name: self.primary_rows}
+        return {"organization": self.primary_rows}
 
 
 class OrganizationLoader:

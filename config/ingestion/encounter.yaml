@@ -1,0 +1,5 @@
+pipeline_name: ingest_encounter
+input_path: data/MimicEncounter.ndjson.gz
+batch_size: 500
+table_name: encounter
+auxiliary_table_name: encounter_location

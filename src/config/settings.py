@@ -72,6 +72,7 @@ class ResourceIngestionSettings:
     input_path: Path
     batch_size: int
     table_name: str
+    auxiliary_table_name: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -85,6 +86,7 @@ class ProjectSettings:
     organization: ResourceIngestionSettings
     location: ResourceIngestionSettings
     patient: ResourceIngestionSettings
+    encounter: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -224,11 +226,15 @@ def _load_resource_settings(
     batch_size = _require_int(data, "batch_size", source=source)
     table_name = _require_string(data, "table_name", source=source)
     _validate_identifier(table_name, label=f"table_name em {source.name}")
+    auxiliary_table_name = _optional_string(data, "auxiliary_table_name")
+    if auxiliary_table_name is not None:
+        _validate_identifier(auxiliary_table_name, label=f"auxiliary_table_name em {source.name}")
     return ResourceIngestionSettings(
         pipeline_name=pipeline_name,
         input_path=input_path,
         batch_size=batch_size,
         table_name=table_name,
+        auxiliary_table_name=auxiliary_table_name,
     )
 
 
@@ -259,6 +265,7 @@ def load_project_settings() -> ProjectSettings:
     organization_yaml = load_yaml_file(root / "config/ingestion/organization.yaml")
     location_yaml = load_yaml_file(root / "config/ingestion/location.yaml")
     patient_yaml = load_yaml_file(root / "config/ingestion/patient.yaml")
+    encounter_yaml = load_yaml_file(root / "config/ingestion/encounter.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -331,6 +338,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/patient.yaml",
         root=root,
     )
+    encounter = _load_resource_settings(
+        encounter_yaml,
+        source=root / "config/ingestion/encounter.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -340,6 +352,7 @@ def load_project_settings() -> ProjectSettings:
         organization=organization,
         location=location,
         patient=patient,
+        encounter=encounter,
     )
 
 
