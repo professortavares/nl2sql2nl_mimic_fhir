@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import re
 
-_FHIR_REFERENCE_PATTERN = re.compile(r"^(?P<resource_type>[A-Za-z][A-Za-z0-9]*)/(?P<resource_id>[A-Za-z0-9\-\.]{1,64})$")
+_FHIR_REFERENCE_PATTERN = re.compile(
+    r"^(?P<resource_type>[A-Za-z][A-Za-z0-9]*)/(?P<resource_id>[A-Za-z0-9\-\.]{1,64})$"
+)
 
 
 class FhirReferenceParseError(ValueError):
@@ -16,6 +18,11 @@ class FhirReferenceParseError(ValueError):
 def parse_fhir_reference(reference: str, expected_resource_type: str) -> str:
     """
     Extrai o identificador de uma referência FHIR do tipo `ResourceType/id`.
+
+    A função valida a referência recebida, confirma se o tipo informado
+    corresponde ao tipo esperado e devolve apenas a parte identificadora.
+    Em caso de valor vazio, tipo inesperado ou formato malformado, a função
+    levanta uma exceção específica para facilitar o tratamento no pipeline.
 
     Parâmetros:
     ----------
@@ -68,4 +75,3 @@ def parse_fhir_reference(reference: str, expected_resource_type: str) -> str:
             f"mas encontrado {parsed_resource_type!r}."
         )
     return resource_id
-

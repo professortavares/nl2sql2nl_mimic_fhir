@@ -24,39 +24,17 @@ def test_transform_patient_with_full_payload() -> None:
             "resourceType": "Patient",
             "gender": "female",
             "birthDate": "1980-01-01",
-            "meta": {"profile": ["profile-patient"]},
-            "name": [{"use": "official", "family": "Doe"}],
-            "identifier": [{"system": "sys", "value": "123"}],
-            "communication": [{"language": {"coding": [{"system": "lang", "code": "en"}]}}],
-            "maritalStatus": {"coding": [{"system": "marital", "code": "S"}]},
+            "name": [{"family": ""}, {"family": "Doe"}],
+            "identifier": [{"value": ""}, {"value": "123"}],
+            "maritalStatus": {"coding": [{"code": ""}, {"code": "S"}]},
             "extension": [
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
-                    "extension": [
-                        {
-                            "url": "ombCategory",
-                            "valueCoding": {
-                                "system": "urn:oid:1",
-                                "code": "2106-3",
-                                "display": "White",
-                            },
-                        },
-                        {"url": "text", "valueString": "White"},
-                    ],
+                    "extension": [{"url": "text", "valueString": "White"}],
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
-                    "extension": [
-                        {
-                            "url": "ombCategory",
-                            "valueCoding": {
-                                "system": "urn:oid:1",
-                                "code": "2186-5",
-                                "display": "Not Hispanic or Latino",
-                            },
-                        },
-                        {"url": "text", "valueString": "Not Hispanic or Latino"},
-                    ],
+                    "extension": [{"url": "text", "valueString": "Not Hispanic or Latino"}],
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
@@ -69,38 +47,18 @@ def test_transform_patient_with_full_payload() -> None:
         }
     )
 
-    assert result.patient["id"] == "pat-1"
-    assert result.patient["gender"] == "female"
-    assert result.patient["birth_date"] == "1980-01-01"
-    assert result.patient["managing_organization_id"] == "ee172322-118b-5716-abbc-18e4c5437e15"
-    assert result.meta_profiles == [{"patient_id": "pat-1", "profile": "profile-patient"}]
-    assert result.names == [{"patient_id": "pat-1", "use": "official", "family": "Doe"}]
-    assert result.identifiers == [{"patient_id": "pat-1", "system": "sys", "value": "123"}]
-    assert result.communication_language_codings == [
-        {"patient_id": "pat-1", "system": "lang", "code": "en"}
-    ]
-    assert result.marital_status_codings == [
-        {"patient_id": "pat-1", "system": "marital", "code": "S"}
-    ]
-    assert result.race == [
-        {
-            "patient_id": "pat-1",
-            "omb_category_system": "urn:oid:1",
-            "omb_category_code": "2106-3",
-            "omb_category_display": "White",
-            "text": "White",
-        }
-    ]
-    assert result.ethnicity == [
-        {
-            "patient_id": "pat-1",
-            "omb_category_system": "urn:oid:1",
-            "omb_category_code": "2186-5",
-            "omb_category_display": "Not Hispanic or Latino",
-            "text": "Not Hispanic or Latino",
-        }
-    ]
-    assert result.birthsex == [{"patient_id": "pat-1", "value_code": "F"}]
+    assert result == {
+        "id": "pat-1",
+        "gender": "female",
+        "birth_date": "1980-01-01",
+        "name": "Doe",
+        "identifier": "123",
+        "marital_status_coding": "S",
+        "race": "White",
+        "ethnicity": "Not Hispanic or Latino",
+        "birthsex": "F",
+        "managing_organization_id": "ee172322-118b-5716-abbc-18e4c5437e15",
+    }
 
 
 def test_transform_patient_with_optional_fields_missing() -> None:
@@ -111,17 +69,18 @@ def test_transform_patient_with_optional_fields_missing() -> None:
     transformer = PatientTransformer()
     result = transformer.transform({"id": "pat-1", "resourceType": "Patient"})
 
-    assert result.patient["gender"] is None
-    assert result.patient["birth_date"] is None
-    assert result.patient["managing_organization_id"] is None
-    assert result.meta_profiles == []
-    assert result.names == []
-    assert result.identifiers == []
-    assert result.communication_language_codings == []
-    assert result.marital_status_codings == []
-    assert result.race == []
-    assert result.ethnicity == []
-    assert result.birthsex == []
+    assert result == {
+        "id": "pat-1",
+        "gender": None,
+        "birth_date": None,
+        "name": None,
+        "identifier": None,
+        "marital_status_coding": None,
+        "race": None,
+        "ethnicity": None,
+        "birthsex": None,
+        "managing_organization_id": None,
+    }
 
 
 def test_transform_patient_rejects_invalid_reference() -> None:
@@ -140,3 +99,24 @@ def test_transform_patient_rejects_invalid_reference() -> None:
             }
         )
 
+
+def test_transform_patient_returns_only_simplified_columns() -> None:
+    """
+    Deve retornar somente as colunas simplificadas definidas para a fase atual.
+    """
+
+    transformer = PatientTransformer()
+    result = transformer.transform({"id": "pat-1", "resourceType": "Patient"})
+
+    assert set(result.keys()) == {
+        "id",
+        "gender",
+        "birth_date",
+        "name",
+        "identifier",
+        "marital_status_coding",
+        "race",
+        "ethnicity",
+        "birthsex",
+        "managing_organization_id",
+    }

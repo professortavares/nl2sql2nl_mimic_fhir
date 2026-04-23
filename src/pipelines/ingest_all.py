@@ -51,9 +51,9 @@ class IngestAllPipeline:
         self._engine = create_engine_from_settings(settings.database)
         metadata, tables = build_project_metadata(
             settings.database.schema_name,
-            settings.organization.table_names,
-            settings.location.table_names,
-            settings.patient.table_names,
+            settings.organization.table_name,
+            settings.location.table_name,
+            settings.patient.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -122,10 +122,7 @@ class IngestAllPipeline:
 
         reset_schema(connection, self._settings.database.schema_name)
         self._metadata.create_all(connection)
-        LOGGER.info(
-            "Schema resetado e tabelas criadas: %s",
-            self._settings.database.schema_name,
-        )
+        LOGGER.info("Schema resetado e tabelas criadas: %s", self._settings.database.schema_name)
 
 
 def _merge_table_counts(counts: Iterable[dict[str, int]]) -> dict[str, int]:

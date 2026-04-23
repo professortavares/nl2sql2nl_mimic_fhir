@@ -5,9 +5,10 @@ Leitura incremental de arquivos NDJSON compactados com gzip.
 from __future__ import annotations
 
 import gzip
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator, Mapping
 
 
 @dataclass(slots=True, frozen=True)
@@ -16,6 +17,10 @@ class RawNdjsonLine:
 
     line_number: int
     content: str
+
+
+class NdjsonGzipReaderError(ValueError):
+    """Indica falha de leitura ou parsing em um arquivo `.ndjson.gz`."""
 
 
 class NdjsonGzipReader:
@@ -79,3 +84,31 @@ class NdjsonGzipReader:
                     continue
                 yield RawNdjsonLine(line_number=line_number, content=content)
 
+    def iter_json_objects(self) -> Iterator[Mapping[str, Any]]:
+        """
+        Itera sobre os objetos JSON presentes no arquivo.
+
+        Retorno:
+        -------
+        Iterator[Mapping[str, Any]]
+            Objetos JSON decodificados linha a linha.
+
+        Exceções:
+        --------
+        NdjsonGzipReaderError
+            Quando uma linha contém JSON inválido ou um objeto não mapeável.
+        """
+
+        for raw_line in self.iter_lines():
+            try:
+                payload = json.loads(raw_line.content)
+            except json.JSONDecodeError as exc:
+                raise NdjsonGzipReaderError(
+                    f"JSON inválido na linha {raw_line.line_number} de {self._file_path.name}."
+                ) from exc
+            if not isinstance(payload, Mapping):
+                raise NdjsonGzipReaderError(
+                    f"A linha {raw_line.line_number} de {self._file_path.name} "
+                    "não contém um objeto JSON mapeável."
+                )
+            yield payload

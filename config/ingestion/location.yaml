@@ -1,7 +1,4 @@
 pipeline_name: ingest_location
 input_path: data/MimicLocation.ndjson.gz
 batch_size: 500
-table_names:
-  location: location
-  location_meta_profile: location_meta_profile
-  location_physical_type_coding: location_physical_type_coding
+table_name: location

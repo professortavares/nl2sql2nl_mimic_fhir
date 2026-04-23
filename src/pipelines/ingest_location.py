@@ -51,4 +51,3 @@ class LocationIngestionPipeline:
             skip_invalid_records=self._common_settings.skip_invalid_records,
             resource_name=self.resource_name,
         )
-

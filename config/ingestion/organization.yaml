@@ -1,8 +1,4 @@
 pipeline_name: ingest_organization
 input_path: data/MimicOrganization.ndjson.gz
 batch_size: 500
-table_names:
-  organization: organization
-  organization_meta_profile: organization_meta_profile
-  organization_identifier: organization_identifier
-  organization_type_coding: organization_type_coding
+table_name: organization

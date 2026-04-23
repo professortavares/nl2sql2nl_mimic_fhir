@@ -40,4 +40,3 @@ def test_parse_fhir_reference_invalid_cases(
 
     with pytest.raises(expected_exception):
         parse_fhir_reference(reference, expected_resource_type)
-

@@ -17,34 +17,23 @@ class LocationBatchInsertCounts:
     """Resumo das linhas inseridas em um lote de Location."""
 
     primary_rows: int
-    meta_profiles: int
-    physical_type_codings: int
 
-    def table_counts(self) -> dict[str, int]:
+    def table_counts(self, table_name: str) -> dict[str, int]:
         """
         Retorna a contagem de linhas por tabela.
         """
 
-        return {
-            "location": self.primary_rows,
-            "location_meta_profile": self.meta_profiles,
-            "location_physical_type_coding": self.physical_type_codings,
-        }
+        return {table_name: self.primary_rows}
 
 
 class LocationLoader:
     """
-    Persiste batches de Location em tabelas normalizadas.
+    Persiste batches de Location na tabela simplificada.
     """
 
     def __init__(self, tables: LocationTables) -> None:
         """
         Inicializa o carregador.
-
-        Parâmetros:
-        ----------
-        tables : LocationTables
-            Referências das tabelas já construídas no schema.
         """
 
         self._tables = tables
@@ -57,46 +46,13 @@ class LocationLoader:
 
         return self._tables
 
-    def insert_batch(self, connection: Connection, batch: Sequence[Any]) -> LocationBatchInsertCounts:
+    def insert_batch(self, connection: Connection, batch: Sequence[dict[str, Any]]) -> LocationBatchInsertCounts:
         """
         Persiste um lote de locations transformadas.
-
-        Parâmetros:
-        ----------
-        connection : Connection
-            Conexão SQLAlchemy ativa dentro da transação.
-        batch : Sequence[Any]
-            Conjunto de registros transformados.
-
-        Retorno:
-        -------
-        LocationBatchInsertCounts
-            Quantidade de linhas persistidas.
         """
 
         if not batch:
-            return LocationBatchInsertCounts(0, 0, 0)
+            return LocationBatchInsertCounts(0)
 
-        location_rows: list[dict[str, Any]] = []
-        meta_profile_rows: list[dict[str, Any]] = []
-        physical_type_coding_rows: list[dict[str, Any]] = []
-
-        for item in batch:
-            location_rows.append(item.location)
-            meta_profile_rows.extend(item.meta_profiles)
-            physical_type_coding_rows.extend(item.physical_type_codings)
-
-        connection.execute(insert(self._tables.location), location_rows)
-        if meta_profile_rows:
-            connection.execute(insert(self._tables.meta_profile), meta_profile_rows)
-        if physical_type_coding_rows:
-            connection.execute(
-                insert(self._tables.physical_type_coding),
-                physical_type_coding_rows,
-            )
-
-        return LocationBatchInsertCounts(
-            primary_rows=len(location_rows),
-            meta_profiles=len(meta_profile_rows),
-            physical_type_codings=len(physical_type_coding_rows),
-        )
+        connection.execute(insert(self._tables.location), list(batch))
+        return LocationBatchInsertCounts(primary_rows=len(batch))

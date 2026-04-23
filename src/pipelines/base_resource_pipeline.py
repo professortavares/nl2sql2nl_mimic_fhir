@@ -28,9 +28,6 @@ class BatchInsertResult(Protocol):
 
     primary_rows: int
 
-    def table_counts(self) -> dict[str, int]:
-        """Retorna a contagem de linhas por tabela afetada."""
-
 
 class BatchLoader(Protocol[TTransformed]):
     """
@@ -47,7 +44,7 @@ class ResourceTransformer(Protocol[TTransformed]):
     """
 
     def transform(self, resource: Any) -> TTransformed:
-        """Converte um recurso bruto em registros relacionais."""
+        """Converte um recurso bruto em um registro relacional."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -134,25 +131,27 @@ def ingest_ndjson_resource(
         batch.append(transformed)
         if len(batch) >= batch_size:
             batch_result = _insert_batch(connection, loader, batch, resource_name)
+            batch_table_counts = _table_counts_for_loader(loader, batch_result)
             records_inserted += batch_result.primary_rows
-            table_counts = _merge_counts(table_counts, batch_result.table_counts())
+            table_counts = _merge_counts(table_counts, batch_table_counts)
             LOGGER.info(
                 "Lote persistido para %s: registros=%s tabelas=%s",
                 resource_name,
                 batch_result.primary_rows,
-                batch_result.table_counts(),
+                batch_table_counts,
             )
             batch.clear()
 
     if batch:
         batch_result = _insert_batch(connection, loader, batch, resource_name)
+        batch_table_counts = _table_counts_for_loader(loader, batch_result)
         records_inserted += batch_result.primary_rows
-        table_counts = _merge_counts(table_counts, batch_result.table_counts())
+        table_counts = _merge_counts(table_counts, batch_table_counts)
         LOGGER.info(
             "Lote final persistido para %s: registros=%s tabelas=%s",
             resource_name,
             batch_result.primary_rows,
-            batch_result.table_counts(),
+            batch_table_counts,
         )
 
     elapsed_seconds = perf_counter() - started_at
@@ -190,9 +189,7 @@ def _insert_batch(
     try:
         return loader.insert_batch(connection=connection, batch=batch)
     except IntegrityError as exc:
-        raise RuntimeError(
-            f"Falha de integridade ao persistir lote de {resource_name}."
-        ) from exc
+        raise RuntimeError(f"Falha de integridade ao persistir lote de {resource_name}.") from exc
 
 
 def _merge_counts(current: dict[str, int], update: dict[str, int]) -> dict[str, int]:
@@ -205,3 +202,22 @@ def _merge_counts(current: dict[str, int], update: dict[str, int]) -> dict[str, 
         merged[table_name] = merged.get(table_name, 0) + count
     return merged
 
+
+def _table_counts_for_loader(loader: BatchLoader[Any], batch_result: BatchInsertResult) -> dict[str, int]:
+    """
+    Monta a contagem de tabelas com base no nome físico exposto pelo loader.
+    """
+
+    table_name = getattr(getattr(loader, "tables"), "organization", None)
+    if table_name is not None:
+        return {table_name.name: batch_result.primary_rows}
+
+    table_name = getattr(getattr(loader, "tables"), "location", None)
+    if table_name is not None:
+        return {table_name.name: batch_result.primary_rows}
+
+    table_name = getattr(getattr(loader, "tables"), "patient", None)
+    if table_name is not None:
+        return {table_name.name: batch_result.primary_rows}
+
+    raise AttributeError("Loader não expõe uma tabela reconhecida.")

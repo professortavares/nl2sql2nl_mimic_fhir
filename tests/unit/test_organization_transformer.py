@@ -12,9 +12,9 @@ from src.ingestion.transformers.organization_transformer import (
 )
 
 
-def test_transform_organization_with_lists() -> None:
+def test_transform_organization_with_optional_fields() -> None:
     """
-    Deve transformar um registro válido com listas preenchidas.
+    Deve transformar um registro válido e ignorar campos extras.
     """
 
     transformer = OrganizationTransformer()
@@ -23,27 +23,13 @@ def test_transform_organization_with_lists() -> None:
             "id": "org-1",
             "resourceType": "Organization",
             "active": True,
-            "name": "Hospital",
-            "meta": {"profile": ["profile-1"]},
-            "identifier": [{"system": "sys", "value": "123"}],
-            "type": [{"coding": [{"system": "type-sys", "code": "prov", "display": "Provider"}]}],
+            "name": "Beth Israel",
+            "identifier": [{"value": "ignored"}],
+            "type": [{"coding": [{"code": "prov"}]}],
         }
     )
 
-    assert result.organization["id"] == "org-1"
-    assert result.organization["resource_type"] == "Organization"
-    assert result.organization["active"] is True
-    assert result.organization["name"] == "Hospital"
-    assert result.meta_profiles == [{"organization_id": "org-1", "profile": "profile-1"}]
-    assert result.identifiers == [{"organization_id": "org-1", "system": "sys", "value": "123"}]
-    assert result.type_codings == [
-        {
-            "organization_id": "org-1",
-            "system": "type-sys",
-            "code": "prov",
-            "display": "Provider",
-        }
-    ]
+    assert result == {"id": "org-1", "name": "Beth Israel"}
 
 
 def test_transform_organization_with_optional_fields_missing() -> None:
@@ -54,11 +40,7 @@ def test_transform_organization_with_optional_fields_missing() -> None:
     transformer = OrganizationTransformer()
     result = transformer.transform({"id": "org-1", "resourceType": "Organization"})
 
-    assert result.organization["active"] is None
-    assert result.organization["name"] is None
-    assert result.meta_profiles == []
-    assert result.identifiers == []
-    assert result.type_codings == []
+    assert result == {"id": "org-1", "name": None}
 
 
 def test_transform_organization_rejects_invalid_resource_type() -> None:
@@ -70,4 +52,3 @@ def test_transform_organization_rejects_invalid_resource_type() -> None:
 
     with pytest.raises(OrganizationTransformationError):
         transformer.transform({"id": "org-1", "resourceType": "Patient"})
-

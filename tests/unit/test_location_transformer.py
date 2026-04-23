@@ -35,22 +35,17 @@ def test_transform_location_with_managing_organization() -> None:
             "resourceType": "Location",
             "name": "Emergency",
             "status": "active",
-            "meta": {"profile": ["profile-location"]},
-            "physicalType": {
-                "coding": [{"system": "sys", "code": "ward", "display": "Ward"}]
-            },
             "managingOrganization": {
                 "reference": "Organization/ee172322-118b-5716-abbc-18e4c5437e15"
             },
         }
     )
 
-    assert result.location["id"] == "loc-1"
-    assert result.location["managing_organization_id"] == "ee172322-118b-5716-abbc-18e4c5437e15"
-    assert result.meta_profiles == [{"location_id": "loc-1", "profile": "profile-location"}]
-    assert result.physical_type_codings == [
-        {"location_id": "loc-1", "system": "sys", "code": "ward", "display": "Ward"}
-    ]
+    assert result == {
+        "id": "loc-1",
+        "name": "Emergency",
+        "managing_organization_id": "ee172322-118b-5716-abbc-18e4c5437e15",
+    }
 
 
 def test_transform_location_without_managing_organization() -> None:
@@ -61,9 +56,7 @@ def test_transform_location_without_managing_organization() -> None:
     transformer = LocationTransformer()
     result = transformer.transform({"id": "loc-1", "resourceType": "Location"})
 
-    assert result.location["managing_organization_id"] is None
-    assert result.meta_profiles == []
-    assert result.physical_type_codings == []
+    assert result == {"id": "loc-1", "name": None, "managing_organization_id": None}
 
 
 def test_transform_location_rejects_invalid_reference() -> None:
@@ -82,3 +75,20 @@ def test_transform_location_rejects_invalid_reference() -> None:
             }
         )
 
+
+def test_transform_location_does_not_include_removed_fields() -> None:
+    """
+    Deve retornar somente os campos simplificados.
+    """
+
+    transformer = LocationTransformer()
+    result = transformer.transform(
+        {
+            "id": "loc-1",
+            "resourceType": "Location",
+            "status": "active",
+            "name": "Ward",
+        }
+    )
+
+    assert set(result.keys()) == {"id", "name", "managing_organization_id"}

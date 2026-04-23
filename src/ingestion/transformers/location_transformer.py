@@ -1,29 +1,22 @@
 """
-Transformação de recursos FHIR `Location` para linhas relacionais.
+Transformação de recursos FHIR `Location` para a tabela simplificada.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Mapping
 
 from src.ingestion.parsers.fhir_reference_parser import (
     FhirReferenceParseError,
     parse_fhir_reference,
 )
+from src.ingestion.utils.selection import first_non_empty_text
+
+_EXPECTED_REFERENCE_TYPE = "Organization"
 
 
 class LocationTransformationError(ValueError):
     """Indica que um recurso Location não passou na validação mínima."""
-
-
-@dataclass(slots=True, frozen=True)
-class LocationTransformationResult:
-    """Conjunto de linhas derivadas de um único recurso Location."""
-
-    location: dict[str, Any]
-    meta_profiles: list[dict[str, Any]]
-    physical_type_codings: list[dict[str, Any]]
 
 
 def parse_managing_organization_reference(reference: str) -> str:
@@ -46,21 +39,17 @@ def parse_managing_organization_reference(reference: str) -> str:
         Quando `reference` não é string.
     ValueError
         Quando o formato não corresponde ao padrão esperado.
-
-    Exemplos de uso:
-    ----------------
-    parse_managing_organization_reference("Organization/abc123")
     """
 
-    return parse_fhir_reference(reference, "Organization")
+    return parse_fhir_reference(reference, _EXPECTED_REFERENCE_TYPE)
 
 
 class LocationTransformer:
     """
-    Converte recursos FHIR Location em estruturas relacionais normalizadas.
+    Converte recursos FHIR Location em um dicionário relacional enxuto.
     """
 
-    def transform(self, resource: Mapping[str, Any]) -> LocationTransformationResult:
+    def transform(self, resource: Mapping[str, Any]) -> dict[str, Any]:
         """
         Transforma um recurso JSON carregado em memória.
 
@@ -71,43 +60,31 @@ class LocationTransformer:
 
         Retorno:
         -------
-        LocationTransformationResult
-            Linhas prontas para persistência.
+        dict[str, Any]
+            Registro pronto para persistência na tabela `location`.
         """
 
         if not isinstance(resource, Mapping):
             raise TypeError("O recurso deve ser um mapeamento JSON.")
 
-        resource_type = resource.get("resourceType")
-        if resource_type != "Location":
+        if resource.get("resourceType") != "Location":
             raise LocationTransformationError(
-                f"resourceType inválido para o pipeline de Location: {resource_type!r}"
+                f"resourceType inválido para Location: {resource.get('resourceType')!r}"
             )
 
-        location_id = self._require_text(resource.get("id"), field_name="id")
-        status = self._optional_text(resource.get("status"))
-        name = self._optional_text(resource.get("name"))
-        managing_organization_id = self._extract_managing_organization_id(resource.get("managingOrganization"))
+        location_id = first_non_empty_text(resource.get("id"))
+        if location_id is None:
+            raise LocationTransformationError("O campo obrigatório 'id' está ausente ou vazio.")
 
-        location = {
+        managing_organization_id = self._extract_managing_organization_id(
+            resource.get("managingOrganization")
+        )
+
+        return {
             "id": location_id,
-            "resource_type": "Location",
-            "name": name,
-            "status": status,
+            "name": first_non_empty_text(resource.get("name")),
             "managing_organization_id": managing_organization_id,
         }
-
-        meta_profiles = self._extract_meta_profiles(location_id, resource.get("meta"))
-        physical_type_codings = self._extract_physical_type_codings(
-            location_id,
-            resource.get("physicalType"),
-        )
-
-        return LocationTransformationResult(
-            location=location,
-            meta_profiles=meta_profiles,
-            physical_type_codings=physical_type_codings,
-        )
 
     def _extract_managing_organization_id(self, managing_organization: Any) -> str | None:
         """
@@ -129,76 +106,3 @@ class LocationTransformer:
             return parse_managing_organization_reference(reference)
         except (TypeError, ValueError, FhirReferenceParseError) as exc:
             raise LocationTransformationError(str(exc)) from exc
-
-    def _extract_meta_profiles(
-        self,
-        location_id: str,
-        meta: Any,
-    ) -> list[dict[str, Any]]:
-        """
-        Extrai os perfis de `meta.profile`.
-        """
-
-        if not isinstance(meta, Mapping):
-            return []
-        profiles = meta.get("profile")
-        if not isinstance(profiles, list):
-            return []
-
-        rows: list[dict[str, Any]] = []
-        for profile in profiles:
-            normalized_profile = self._optional_text(profile)
-            if normalized_profile is not None:
-                rows.append({"location_id": location_id, "profile": normalized_profile})
-        return rows
-
-    def _extract_physical_type_codings(
-        self,
-        location_id: str,
-        physical_type: Any,
-    ) -> list[dict[str, Any]]:
-        """
-        Extrai os codings de `physicalType.coding`.
-        """
-
-        if not isinstance(physical_type, Mapping):
-            return []
-        codings = physical_type.get("coding")
-        if not isinstance(codings, list):
-            return []
-
-        rows: list[dict[str, Any]] = []
-        for coding in codings:
-            if not isinstance(coding, Mapping):
-                continue
-            rows.append(
-                {
-                    "location_id": location_id,
-                    "system": self._optional_text(coding.get("system")),
-                    "code": self._optional_text(coding.get("code")),
-                    "display": self._optional_text(coding.get("display")),
-                }
-            )
-        return rows
-
-    def _require_text(self, value: Any, *, field_name: str) -> str:
-        """
-        Valida se um campo obrigatório contém texto não vazio.
-        """
-
-        normalized = self._optional_text(value)
-        if normalized is None:
-            raise LocationTransformationError(
-                f"O campo obrigatório '{field_name}' está ausente ou vazio."
-            )
-        return normalized
-
-    def _optional_text(self, value: Any) -> str | None:
-        """
-        Normaliza valores opcionais para texto limpo ou `None`.
-        """
-
-        if value is None or not isinstance(value, str):
-            return None
-        normalized = value.strip()
-        return normalized or None

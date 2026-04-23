@@ -1,10 +1,10 @@
 # nl2sql2nl_mimic_fhir
 
-Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional normalizada, logging em arquivo e orquestração por dependências entre recursos.
+Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional simplificada, logging em arquivo e orquestração rígida por dependências entre recursos.
 
-## Visão geral
+## Visão Geral
 
-Esta base processa agora três arquivos FHIR:
+Esta fase do projeto processa exatamente três arquivos:
 
 1. `data/MimicOrganization.ndjson.gz`
 2. `data/MimicLocation.ndjson.gz`
@@ -16,16 +16,16 @@ A ordem de importação é obrigatória:
 2. `Location`
 3. `Patient`
 
-O pipeline foi desenhado para crescer com novos recursos FHIR no futuro, preservando separação entre leitura, transformação, carga, schema e orquestração.
+A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. A implementação foi desenhada para facilitar novas fases com outros recursos FHIR, sem carregar agora tabelas auxiliares desnecessárias.
 
 ## Requisitos
 
 - Python 3.13 ou superior
 - `uv`
 - PostgreSQL local acessível em `localhost:5432`
-- Docker, se o banco estiver sendo executado em container
+- Docker, se o banco estiver em container
 
-## Fontes de dados e documentação
+## Fontes de Dados
 
 - Download dos arquivos de ingestão: https://physionet.org/content/mimic-iv-fhir-demo/2.1.0/
 - Documentação do MIMIC FHIR: https://mimic.mit.edu/fhir/index.html
@@ -34,7 +34,7 @@ O pipeline foi desenhado para crescer com novos recursos FHIR no futuro, preserv
 
 ### `.env`
 
-As credenciais ficam apenas no `.env` da raiz do projeto:
+As credenciais ficam somente no `.env` da raiz do projeto:
 
 ```dotenv
 POSTGRES_HOST=localhost
@@ -44,18 +44,16 @@ POSTGRES_USER=app_mimic_fhir
 POSTGRES_PASSWORD=app_mimic_fhir
 ```
 
-Também existe um template sem valores em [`.env.example`](/home/leonardo/Documentos/github/nl2sql2nl_mimic_fhir/.env.example).
-
 ### YAMLs em `config/`
 
-Configurações não sensíveis ficam em YAML:
+As configurações não sensíveis ficam versionadas em YAML:
 
 - `config/database.yaml`
   - schema PostgreSQL
   - flags de conexão
 - `config/logging.yaml`
   - diretório de log
-  - arquivo de log
+  - nome do arquivo
   - nível
   - rotação
 - `config/ingestion/common.yaml`
@@ -65,15 +63,15 @@ Configurações não sensíveis ficam em YAML:
 - `config/ingestion/organization.yaml`
   - caminho do arquivo de `Organization`
   - batch size
-  - nomes das tabelas de `Organization`
+  - nome físico da tabela
 - `config/ingestion/location.yaml`
   - caminho do arquivo de `Location`
   - batch size
-  - nomes das tabelas de `Location`
+  - nome físico da tabela
 - `config/ingestion/patient.yaml`
   - caminho do arquivo de `Patient`
   - batch size
-  - nomes das tabelas de `Patient`
+  - nome físico da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -93,15 +91,15 @@ Execute a pipeline completa com:
 uv run python -m src.main
 ```
 
-Também é possível usar:
+Também é possível usar o atalho:
 
 ```bash
 uv run python main.py
 ```
 
-## Ordem de importação
+## Ordem Da Pipeline
 
-A execução principal segue esta ordem:
+A execução principal segue exatamente esta ordem:
 
 1. reset completo do schema relacionado
 2. criação das tabelas
@@ -109,94 +107,94 @@ A execução principal segue esta ordem:
 4. ingestão de `Location`
 5. ingestão de `Patient`
 
-Essa ordem é rígida porque:
+## Modelagem Final
 
-- `Location.managing_organization_id` aponta para `organization.id`
-- `Patient.managing_organization_id` aponta para `organization.id`
+### Tabela `organization`
 
-## Modelagem
+- `id` `PK`
+- `name`
 
-### Organization
+Campos ignorados nesta fase:
 
-- `organization`
-  - `id`
-  - `resource_type`
-  - `active`
-  - `name`
-- `organization_meta_profile`
-  - `organization_id`
-  - `profile`
+- `resourceType`
+- `active`
+
+Tabelas removidas:
+
 - `organization_identifier`
-  - `organization_id`
-  - `system`
-  - `value`
+- `organization_meta_profile`
 - `organization_type_coding`
-  - `organization_id`
-  - `system`
-  - `code`
-  - `display`
 
-### Location
+### Tabela `location`
 
-- `location`
-  - `id`
-  - `resource_type`
-  - `name`
-  - `status`
-  - `managing_organization_id`
+- `id` `PK`
+- `name`
+- `managing_organization_id` `FK -> organization.id` `nullable`
+
+Campos ignorados nesta fase:
+
+- `resourceType`
+- `status`
+
+Tabelas removidas:
+
 - `location_meta_profile`
-  - `location_id`
-  - `profile`
 - `location_physical_type_coding`
-  - `location_id`
-  - `system`
-  - `code`
-  - `display`
 
-### Patient
+### Tabela `patient`
 
-- `patient`
-  - `id`
-  - `resource_type`
-  - `gender`
-  - `birth_date`
-  - `managing_organization_id`
+- `id` `PK`
+- `gender`
+- `birth_date`
+- `name`
+- `identifier`
+- `marital_status_coding`
+- `race`
+- `ethnicity`
+- `birthsex`
+- `managing_organization_id` `FK -> organization.id` `nullable`
+
+Campos ignorados nesta fase:
+
+- `resourceType`
+- `meta.profile`
+- `communication.language.coding`
+
+Tabelas removidas:
+
 - `patient_meta_profile`
-  - `patient_id`
-  - `profile`
 - `patient_name`
-  - `patient_id`
-  - `use`
-  - `family`
 - `patient_identifier`
-  - `patient_id`
-  - `system`
-  - `value`
 - `patient_communication_language_coding`
-  - `patient_id`
-  - `system`
-  - `code`
 - `patient_marital_status_coding`
-  - `patient_id`
-  - `system`
-  - `code`
 - `patient_race`
-  - `patient_id`
-  - `omb_category_system`
-  - `omb_category_code`
-  - `omb_category_display`
-  - `text`
 - `patient_ethnicity`
-  - `patient_id`
-  - `omb_category_system`
-  - `omb_category_code`
-  - `omb_category_display`
-  - `text`
 - `patient_birthsex`
-  - `patient_id`
-  - `value_code`
 
-O parser de `managingOrganization.reference` aceita o formato FHIR `Organization/<id>` e extrai o identificador para persistência relacional. As extensões de `Patient` são extraídas explicitamente para tabelas normalizadas.
+## Estratégia De Consolidação
+
+Quando uma estrutura FHIR contém listas, a ingestão adota sempre o **primeiro valor não vazio e válido encontrado**.
+
+Isso vale para:
+
+- `name[*].family`
+- `identifier[*].value`
+- `maritalStatus.coding[*].code`
+
+As extensões US Core de `Patient` também foram simplificadas:
+
+- race: `text`
+- ethnicity: `text`
+- birthsex: `valueCode`
+
+Essa decisão foi implementada em código e documentada para facilitar manutenção futura.
+
+## Relacionamentos
+
+- `location.managing_organization_id -> organization.id`
+- `patient.managing_organization_id -> organization.id`
+
+Se a referência estiver ausente, a coluna permanece nula. Se existir, o valor precisa seguir o formato FHIR `Organization/<id>`. O parser reutilizável de referência fica em `src/ingestion/parsers/fhir_reference_parser.py`.
 
 ## Logging
 
@@ -205,40 +203,20 @@ O logging é salvo em arquivo e também pode ir para o console:
 - diretório: `logs/`
 - arquivo: `logs/ingestion.log`
 
-O arquivo é rotacionado usando a biblioteca padrão `logging.handlers`.
+O arquivo usa rotação com `logging.handlers.RotatingFileHandler`.
 
-## Reset total
+## Reset Total
 
 Cada execução:
 
 1. abre uma conexão com o PostgreSQL;
 2. derruba o schema configurado;
-3. recria o schema e todas as tabelas;
-4. insere os dados novamente.
+3. recria o schema e as tabelas;
+4. ingere os três recursos novamente.
 
 O comportamento padrão é `drop_and_recreate`.
 
-## Saída esperada
-
-Exemplo de terminal:
-
-```text
-2026-04-22 ... | INFO | __main__ | Logging configurado em .../logs/ingestion.log
-2026-04-22 ... | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo.
-2026-04-22 ... | INFO | src.pipelines.ingest_all | Ordem da pipeline: ('organization', 'location', 'patient')
-2026-04-22 ... | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicOrganization.ndjson.gz para recurso Organization
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Organization: lidos=1 inseridos=1 ignorados=0 tempo=0.00s
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicLocation.ndjson.gz para recurso Location
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Location: lidos=31 inseridos=31 ignorados=0 tempo=0.01s
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Processando arquivo .../data/MimicPatient.ndjson.gz para recurso Patient
-2026-04-22 ... | INFO | src.pipelines.base_resource_pipeline | Resumo Patient: lidos=100 inseridos=100 ignorados=0 tempo=0.02s
-2026-04-22 ... | INFO | src.pipelines.ingest_all | Resumo final: ordem=('organization', 'location', 'patient') tempo=0.11s tabelas=organization, organization_meta_profile, organization_identifier, organization_type_coding, location, location_meta_profile, location_physical_type_coding, patient, patient_meta_profile, patient_name, patient_identifier, patient_communication_language_coding, patient_marital_status_coding, patient_race, patient_ethnicity, patient_birthsex
-```
-
-## Validação local
-
-Os testes de unidade ficam organizados em `tests/unit/`.
+## Testes
 
 Execute os testes de unidade com:
 
@@ -246,17 +224,40 @@ Execute os testes de unidade com:
 uv run pytest
 ```
 
-Também é possível rodar checagem estática:
+Os testes cobrem:
+
+- parser de referência FHIR
+- leitor NDJSON GZIP
+- transformers de `Organization`, `Location` e `Patient`
+
+## Entrada Principal
+
+O ponto de entrada principal é:
 
 ```bash
-uv run ruff check .
+python -m src.main
 ```
 
-## Próximos passos
+## Saída Esperada
 
-A base foi desenhada para facilitar novas ingestões FHIR:
+Exemplo de terminal:
 
-- criar um YAML por novo recurso;
-- adicionar transformer e loader específicos;
-- ligar tudo em um pipeline novo;
-- incluir o recurso na ordem de ingestão quando houver dependência.
+```text
+2026-04-23 12:00:00,000 | INFO | src.main | Logging configurado em /path/to/logs/ingestion.log
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient')
+2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
+2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... tempo=...
+```
+
+Exemplo de log em arquivo:
+
+```text
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient')
+2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
+2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicOrganization.ndjson.gz para recurso Organization
+2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo Organization: lidos=... inseridos=... ignorados=... tempo=... tabelas={'organization': ...}
+```
+
+## Evolução Futura
+
+A base ficou preparada para incorporar novos recursos FHIR em fases posteriores sem reintroduzir, por padrão, tabelas auxiliares que não tragam ganho analítico imediato.

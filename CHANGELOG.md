@@ -4,6 +4,60 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.4.0] - 2026-04-23
+
+### Adicionado
+
+- Suporte à ingestão dos três arquivos da fase atual:
+  - `data/MimicOrganization.ndjson.gz`
+  - `data/MimicLocation.ndjson.gz`
+  - `data/MimicPatient.ndjson.gz`
+- Pipeline orquestrada com ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+- Foreign keys essenciais mantidas:
+  - `location.managing_organization_id -> organization.id`
+  - `patient.managing_organization_id -> organization.id`
+- Parser reutilizável para referências FHIR no formato `ResourceType/<id>`.
+- Funções reutilizáveis para extração de extensões FHIR do `Patient`.
+- Estratégia explícita de consolidação para listas FHIR: uso do primeiro valor válido encontrado.
+- Logging estruturado em arquivo e console com rotação via `logging.handlers`.
+- Testes de unidade para:
+  - parser de referência FHIR
+  - leitor NDJSON GZIP
+  - transformers de `Organization`, `Location` e `Patient`
+- Atualização do `README.md` para refletir a modelagem simplificada e o processo de execução.
+
+### Alterado
+
+- Simplificação do schema relacional para apenas três tabelas finais:
+  - `organization`
+  - `location`
+  - `patient`
+- Consolidação de atributos no `patient` principal:
+  - `name`
+  - `identifier`
+  - `marital_status_coding`
+  - `race`
+  - `ethnicity`
+  - `birthsex`
+- Remoção de colunas e tabelas auxiliares não necessárias nesta fase:
+  - `resourceType`
+  - `active`
+  - `status`
+  - tabelas de `meta.profile`
+  - tabelas auxiliares de `identifier`, `name`, `coding` e extensões
+- Reestruturação da camada de ingestão para trabalhar com um registro principal por recurso.
+- Recriação total do schema a cada execução com política padrão `drop_and_recreate`.
+- Ajustes na configuração em YAML para refletir a modelagem enxuta e os novos nomes de tabela.
+
+### Corrigido
+
+- Validação mais robusta de referências FHIR inválidas e malformadas.
+- Tratamento controlado de JSON inválido por linha no leitor NDJSON GZIP.
+- Tratamento controlado de falhas de parsing e integridade durante a ingestão.
+
 ## [0.3.0] - 2026-04-22
 
 ### Adicionado
@@ -14,16 +68,6 @@ semântico `X.Y.Z`.
   2. `Location`
   3. `Patient`
 - Foreign key explícita entre `patient.managing_organization_id` e `organization.id`.
-- Novas tabelas normalizadas para `Patient`:
-  - `patient`
-  - `patient_meta_profile`
-  - `patient_name`
-  - `patient_identifier`
-  - `patient_communication_language_coding`
-  - `patient_marital_status_coding`
-  - `patient_race`
-  - `patient_ethnicity`
-  - `patient_birthsex`
 - Parser reutilizável para referências FHIR no formato `ResourceType/<id>`.
 - Parsers explícitos para as extensões FHIR de `Patient`:
   - race
@@ -48,7 +92,7 @@ semântico `X.Y.Z`.
 
 - Validação mais robusta de referências FHIR inválidas em `Location` e `Patient`.
 - Tratamento de falhas de integridade durante a persistência em lote.
-- Falhas de parsing de extensões de `Patient` agora são tratadas de forma controlada.
+- Falhas de parsing de extensões de `Patient` tratadas de forma controlada.
 
 ## [0.2.0] - 2026-04-22
 
@@ -112,4 +156,3 @@ semântico `X.Y.Z`.
 uv sync --extra dev
 uv run python -m src.main
 ```
-
