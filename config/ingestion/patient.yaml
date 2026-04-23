@@ -1,0 +1,13 @@
+pipeline_name: ingest_patient
+input_path: data/MimicPatient.ndjson.gz
+batch_size: 500
+table_names:
+  patient: patient
+  patient_meta_profile: patient_meta_profile
+  patient_name: patient_name
+  patient_identifier: patient_identifier
+  patient_communication_language_coding: patient_communication_language_coding
+  patient_marital_status_coding: patient_marital_status_coding
+  patient_race: patient_race
+  patient_ethnicity: patient_ethnicity
+  patient_birthsex: patient_birthsex

@@ -20,6 +20,17 @@ class LocationBatchInsertCounts:
     meta_profiles: int
     physical_type_codings: int
 
+    def table_counts(self) -> dict[str, int]:
+        """
+        Retorna a contagem de linhas por tabela.
+        """
+
+        return {
+            "location": self.primary_rows,
+            "location_meta_profile": self.meta_profiles,
+            "location_physical_type_coding": self.physical_type_codings,
+        }
+
 
 class LocationLoader:
     """
@@ -89,4 +100,3 @@ class LocationLoader:
             meta_profiles=len(meta_profile_rows),
             physical_type_codings=len(physical_type_coding_rows),
         )
-

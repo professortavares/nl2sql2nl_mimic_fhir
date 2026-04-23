@@ -4,22 +4,13 @@ Pipeline de ingestão do recurso FHIR Location.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from sqlalchemy.engine import Connection
 
 from src.config.settings import ProjectSettings
 from src.ingestion.loaders.location_loader import LocationLoader
 from src.ingestion.readers.ndjson_gzip_reader import NdjsonGzipReader
 from src.ingestion.transformers.location_transformer import LocationTransformer
-from src.pipelines.base import ResourceIngestionSummary, ingest_ndjson_resource
-
-
-@dataclass(slots=True, frozen=True)
-class LocationPipelineSummary(ResourceIngestionSummary):
-    """
-    Resumo específico da ingestão de Location.
-    """
+from src.pipelines.base_resource_pipeline import ResourceIngestionSummary, ingest_ndjson_resource
 
 
 class LocationIngestionPipeline:
@@ -46,12 +37,12 @@ class LocationIngestionPipeline:
 
         return "Location"
 
-    def ingest(self, connection: Connection) -> LocationPipelineSummary:
+    def ingest(self, connection: Connection) -> ResourceIngestionSummary:
         """
         Executa a ingestão de Location usando uma conexão já aberta.
         """
 
-        summary = ingest_ndjson_resource(
+        return ingest_ndjson_resource(
             connection=connection,
             reader=self._reader,
             transformer=self._transformer,
@@ -60,11 +51,4 @@ class LocationIngestionPipeline:
             skip_invalid_records=self._common_settings.skip_invalid_records,
             resource_name=self.resource_name,
         )
-        return LocationPipelineSummary(
-            resource_name=summary.resource_name,
-            input_path=summary.input_path,
-            records_read=summary.records_read,
-            records_inserted=summary.records_inserted,
-            skipped_records=summary.skipped_records,
-            elapsed_seconds=summary.elapsed_seconds,
-        )
+

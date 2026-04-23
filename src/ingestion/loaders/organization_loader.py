@@ -21,6 +21,18 @@ class OrganizationBatchInsertCounts:
     identifiers: int
     type_codings: int
 
+    def table_counts(self) -> dict[str, int]:
+        """
+        Retorna a contagem de linhas por tabela.
+        """
+
+        return {
+            "organization": self.primary_rows,
+            "organization_meta_profile": self.meta_profiles,
+            "organization_identifier": self.identifiers,
+            "organization_type_coding": self.type_codings,
+        }
+
 
 class OrganizationLoader:
     """

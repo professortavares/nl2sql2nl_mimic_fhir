@@ -4,12 +4,12 @@ Transformação de recursos FHIR `Location` para linhas relacionais.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-_MANAGING_ORGANIZATION_REFERENCE_PATTERN = re.compile(
-    r"^Organization/(?P<organization_id>[A-Za-z0-9\-\.]{1,64})$"
+from src.ingestion.parsers.fhir_reference_parser import (
+    FhirReferenceParseError,
+    parse_fhir_reference,
 )
 
 
@@ -52,16 +52,7 @@ def parse_managing_organization_reference(reference: str) -> str:
     parse_managing_organization_reference("Organization/abc123")
     """
 
-    if not isinstance(reference, str):
-        raise TypeError("A referência de organização deve ser uma string.")
-
-    normalized_reference = reference.strip()
-    match = _MANAGING_ORGANIZATION_REFERENCE_PATTERN.fullmatch(normalized_reference)
-    if match is None:
-        raise ValueError(
-            "A referência managingOrganization.reference deve seguir o formato 'Organization/<id>'."
-        )
-    return match.group("organization_id")
+    return parse_fhir_reference(reference, "Organization")
 
 
 class LocationTransformer:
@@ -136,7 +127,7 @@ class LocationTransformer:
             )
         try:
             return parse_managing_organization_reference(reference)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, FhirReferenceParseError) as exc:
             raise LocationTransformationError(str(exc)) from exc
 
     def _extract_meta_profiles(
@@ -211,4 +202,3 @@ class LocationTransformer:
             return None
         normalized = value.strip()
         return normalized or None
-

@@ -28,12 +28,16 @@ def main() -> int:
         logger.info("Logging configurado em %s", log_file_path)
         pipeline = IngestAllPipeline(settings)
         summary = pipeline.run()
+        resource_order = settings.resources.execution_order
+        logger.info("Ordem executada: %s", resource_order)
         logger.info(
-            "Execução concluída com sucesso: organization_lidos=%s organization_inseridos=%s location_lidos=%s location_inseridos=%s tempo=%.2fs",
-            summary.organization.records_read,
-            summary.organization.records_inserted,
-            summary.location.records_read,
-            summary.location.records_inserted,
+            "Execução concluída com sucesso: organization_lidos=%s organization_inseridos=%s location_lidos=%s location_inseridos=%s patient_lidos=%s patient_inseridos=%s tempo=%.2fs",
+            summary.resource_summaries["organization"].records_read,
+            summary.resource_summaries["organization"].records_inserted,
+            summary.resource_summaries["location"].records_read,
+            summary.resource_summaries["location"].records_inserted,
+            summary.resource_summaries["patient"].records_read,
+            summary.resource_summaries["patient"].records_inserted,
             summary.elapsed_seconds,
         )
         return 0
@@ -44,4 +48,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

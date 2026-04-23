@@ -1,5 +1,5 @@
 """
-Pipeline de ingestão do recurso FHIR Organization.
+Pipeline de ingestão do recurso FHIR Patient.
 """
 
 from __future__ import annotations
@@ -7,27 +7,27 @@ from __future__ import annotations
 from sqlalchemy.engine import Connection
 
 from src.config.settings import ProjectSettings
-from src.ingestion.loaders.organization_loader import OrganizationLoader
+from src.ingestion.loaders.patient_loader import PatientLoader
 from src.ingestion.readers.ndjson_gzip_reader import NdjsonGzipReader
-from src.ingestion.transformers.organization_transformer import OrganizationTransformer
+from src.ingestion.transformers.patient_transformer import PatientTransformer
 from src.pipelines.base_resource_pipeline import ResourceIngestionSummary, ingest_ndjson_resource
 
 
-class OrganizationIngestionPipeline:
+class PatientIngestionPipeline:
     """
-    Coordena leitura, transformação e persistência de Organization.
+    Coordena leitura, transformação e persistência de Patient.
     """
 
-    def __init__(self, settings: ProjectSettings, loader: OrganizationLoader) -> None:
+    def __init__(self, settings: ProjectSettings, loader: PatientLoader) -> None:
         """
         Inicializa o pipeline.
         """
 
-        self._settings = settings.organization
+        self._settings = settings.patient
         self._common_settings = settings.common
         self._loader = loader
         self._reader = NdjsonGzipReader(self._settings.input_path)
-        self._transformer = OrganizationTransformer()
+        self._transformer = PatientTransformer()
 
     @property
     def resource_name(self) -> str:
@@ -35,11 +35,11 @@ class OrganizationIngestionPipeline:
         Retorna o nome lógico do recurso.
         """
 
-        return "Organization"
+        return "Patient"
 
     def ingest(self, connection: Connection) -> ResourceIngestionSummary:
         """
-        Executa a ingestão de Organization usando uma conexão já aberta.
+        Executa a ingestão de Patient usando uma conexão já aberta.
         """
 
         return ingest_ndjson_resource(

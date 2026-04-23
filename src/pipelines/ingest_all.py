@@ -1,5 +1,5 @@
 """
-Pipeline principal que orquestra a ingestão de Organization e Location.
+Pipeline principal que orquestra a ingestão de Organization, Location e Patient.
 """
 
 from __future__ import annotations
@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from time import perf_counter
+from typing import Iterable
 
 from sqlalchemy.engine import Connection
 
@@ -16,11 +17,11 @@ from src.db.reset import reset_schema
 from src.db.schema import build_project_metadata
 from src.ingestion.loaders.location_loader import LocationLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
-from src.pipelines.ingest_location import LocationIngestionPipeline, LocationPipelineSummary
-from src.pipelines.ingest_organization import (
-    OrganizationIngestionPipeline,
-    OrganizationPipelineSummary,
-)
+from src.ingestion.loaders.patient_loader import PatientLoader
+from src.pipelines.base_resource_pipeline import ResourceIngestionSummary
+from src.pipelines.ingest_location import LocationIngestionPipeline
+from src.pipelines.ingest_organization import OrganizationIngestionPipeline
+from src.pipelines.ingest_patient import PatientIngestionPipeline
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,10 +32,9 @@ class IngestionRunSummary:
     Resumo consolidado da execução completa.
     """
 
-    organization: OrganizationPipelineSummary
-    location: LocationPipelineSummary
+    resource_summaries: dict[str, ResourceIngestionSummary]
     elapsed_seconds: float
-    affected_tables: tuple[str, ...]
+    table_counts: dict[str, int]
 
 
 class IngestAllPipeline:
@@ -53,18 +53,26 @@ class IngestAllPipeline:
             settings.database.schema_name,
             settings.organization.table_names,
             settings.location.table_names,
+            settings.patient.table_names,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
         self._location_loader = LocationLoader(tables.location)
-        self._organization_pipeline = OrganizationIngestionPipeline(
-            settings=settings,
-            loader=self._organization_loader,
-        )
-        self._location_pipeline = LocationIngestionPipeline(
-            settings=settings,
-            loader=self._location_loader,
-        )
+        self._patient_loader = PatientLoader(tables.patient)
+        self._pipelines = {
+            "organization": OrganizationIngestionPipeline(
+                settings=settings,
+                loader=self._organization_loader,
+            ),
+            "location": LocationIngestionPipeline(
+                settings=settings,
+                loader=self._location_loader,
+            ),
+            "patient": PatientIngestionPipeline(
+                settings=settings,
+                loader=self._patient_loader,
+            ),
+        }
 
     def run(self) -> IngestionRunSummary:
         """
@@ -73,44 +81,37 @@ class IngestAllPipeline:
 
         if self._settings.common.reset_policy != "drop_and_recreate":
             raise ValueError("A política de reset suportada é 'drop_and_recreate'.")
-        if self._settings.common.ingestion_order != ("organization", "location"):
+        if self._settings.resources.execution_order != ("organization", "location", "patient"):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient')."
             )
 
         started_at = perf_counter()
-        LOGGER.info("Iniciando processo de ingestão completo.")
+        LOGGER.info(
+            "Iniciando processo de ingestão completo com ordem: %s",
+            self._settings.resources.execution_order,
+        )
 
+        resource_summaries: dict[str, ResourceIngestionSummary] = {}
         with self._engine.begin() as connection:
             self._reset_and_create_schema(connection)
-            organization_summary = self._organization_pipeline.ingest(connection)
-            location_summary = self._location_pipeline.ingest(connection)
+            for resource_name in self._settings.resources.execution_order:
+                LOGGER.info("Executando recurso %s", resource_name)
+                pipeline = self._pipelines[resource_name]
+                resource_summaries[resource_name] = pipeline.ingest(connection)
 
         elapsed_seconds = perf_counter() - started_at
-        affected_tables = (
-            self._settings.organization.table_names.organization,
-            self._settings.organization.table_names.meta_profile,
-            self._settings.organization.table_names.identifier,
-            self._settings.organization.table_names.type_coding,
-            self._settings.location.table_names.location,
-            self._settings.location.table_names.meta_profile,
-            self._settings.location.table_names.physical_type_coding,
-        )
-
+        table_counts = _merge_table_counts(summary.table_counts for summary in resource_summaries.values())
         summary = IngestionRunSummary(
-            organization=organization_summary,
-            location=location_summary,
+            resource_summaries=resource_summaries,
             elapsed_seconds=elapsed_seconds,
-            affected_tables=affected_tables,
+            table_counts=table_counts,
         )
         LOGGER.info(
-            "Resumo final: organization_lidos=%s organization_inseridos=%s location_lidos=%s location_inseridos=%s tempo=%.2fs tabelas=%s",
-            organization_summary.records_read,
-            organization_summary.records_inserted,
-            location_summary.records_read,
-            location_summary.records_inserted,
+            "Resumo final: ordem=%s tempo=%.2fs tabelas=%s",
+            self._settings.resources.execution_order,
             summary.elapsed_seconds,
-            ", ".join(summary.affected_tables),
+            summary.table_counts,
         )
         return summary
 
@@ -125,3 +126,15 @@ class IngestAllPipeline:
             "Schema resetado e tabelas criadas: %s",
             self._settings.database.schema_name,
         )
+
+
+def _merge_table_counts(counts: Iterable[dict[str, int]]) -> dict[str, int]:
+    """
+    Soma contagens de tabelas provenientes de todos os recursos.
+    """
+
+    merged: dict[str, int] = {}
+    for summary_counts in counts:
+        for table_name, value in summary_counts.items():
+            merged[table_name] = merged.get(table_name, 0) + value
+    return merged
