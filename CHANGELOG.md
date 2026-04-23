@@ -1,50 +1,64 @@
 # Changelog
 
-## 2026-04-22
+Todas as alterações relevantes deste projeto são registradas neste arquivo.
+O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
+semântico `X.Y.Z`.
 
-### Organização inicial
+## [0.2.0] - 2026-04-22
 
-- Criação do pipeline inicial para `Organization`.
-- Criação do arquivo `.env` na raiz com credenciais PostgreSQL locais.
-- Criação de configuração não sensível em YAML para banco e ingestão de `Organization`.
-- Implementação de leitura streaming do arquivo `data/MimicOrganization.ndjson.gz`.
-- Criação do schema relacional normalizado para `Organization`.
-- Criação de execução transacional com reset completo do schema a cada run.
-- Adição de testes básicos para leitor e transformador de `Organization`.
-
-### Expansão para Location
+### Adicionado
 
 - Suporte à ingestão de `data/MimicLocation.ndjson.gz`.
-- Ordem obrigatória de ingestão consolidada:
+- Ordem obrigatória de ingestão:
   1. `Organization`
   2. `Location`
-- Criação de foreign key explícita de `location.managing_organization_id` para `organization.id`.
-- Implementação do parser robusto para `managingOrganization.reference` no formato `Organization/<id>`.
-- Criação das tabelas normalizadas de `Location`:
+- Foreign key explícita entre `location.managing_organization_id` e `organization.id`.
+- Parser robusto para `managingOrganization.reference` no formato FHIR `Organization/<id>`.
+- Novas tabelas normalizadas para `Location`:
   - `location`
   - `location_meta_profile`
   - `location_physical_type_coding`
-- Refatoração da orquestração para um pipeline principal único que:
-  - reseta o schema;
-  - cria as tabelas;
-  - ingere `Organization`;
-  - ingere `Location`.
-- Criação de logging em arquivo e console com rotação, configurado em `config/logging.yaml`.
-- Criação dos YAMLs adicionais:
+- Pipeline principal unificado para:
+  - reset do schema;
+  - criação das tabelas;
+  - ingestão de `Organization`;
+  - ingestão de `Location`.
+- Logging em arquivo e console com rotação, configurado em `config/logging.yaml`.
+- Arquivos YAML adicionais:
   - `config/ingestion/common.yaml`
   - `config/ingestion/location.yaml`
   - `config/logging.yaml`
-- Atualização do `README.md` com instruções de instalação, execução, ordem de ingestão, logs e modelagem.
-- Inclusão de testes para o parser de referência FHIR e transformação de `Location`.
+- Atualização do `README.md` com instalação, execução, ordem de ingestão, logs e modelagem.
+- Testes para o parser de referência FHIR e para a transformação de `Location`.
 
-### Dependências e infraestrutura
+### Alterado
 
-- Manutenção do stack leve com:
-  - `sqlalchemy`
-  - `psycopg[binary]`
-  - `pyyaml`
-- Geração/atualização do `uv.lock` para congelar versões compatíveis.
-- Atualização do `.gitignore` para excluir a pasta `logs/`.
+- Refatoração da configuração para suportar múltiplos recursos FHIR sem acoplamento excessivo.
+- Recriação total do schema e das tabelas em cada execução, agora cobrindo os dois recursos.
+- Ajustes na camada de logging para escrever em `logs/ingestion.log`.
+
+### Corrigido
+
+- Validação mais robusta de referências FHIR inválidas em `Location`.
+- Tratamento de falhas de integridade durante a persistência em lote.
+
+## [0.1.0] - 2026-04-22
+
+### Adicionado
+
+- Pipeline inicial para ingestão de `Organization`.
+- Arquivo `.env` na raiz com credenciais PostgreSQL locais.
+- Configuração não sensível em YAML para banco e ingestão de `Organization`.
+- Leitura streaming do arquivo `data/MimicOrganization.ndjson.gz`.
+- Schema relacional normalizado para `Organization`.
+- Execução transacional com reset completo do schema a cada execução.
+- Testes básicos para o leitor NDJSON gzip e para o transformador de `Organization`.
+- Dependências mínimas para PostgreSQL, SQLAlchemy e YAML.
+
+### Infraestrutura
+
+- Geração do `uv.lock` para congelamento das dependências.
+- Atualização do `.gitignore` para ignorar arquivos gerados e o diretório de logs.
 
 ### Execução
 
@@ -53,9 +67,4 @@ uv sync --extra dev
 uv run python -m src.main
 ```
 
-### Resultado validado
-
-- `Organization` carregado com 1 registro principal.
-- `Location` carregado com 31 registros principais.
-- As tabelas dependentes foram persistidas corretamente dentro da mesma transação.
 
