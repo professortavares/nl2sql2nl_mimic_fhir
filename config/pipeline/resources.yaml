@@ -4,3 +4,4 @@ execution_order:
   - patient
   - encounter
   - encounter_ed
+  - encounter_icu

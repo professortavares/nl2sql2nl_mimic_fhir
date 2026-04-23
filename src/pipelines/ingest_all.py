@@ -1,5 +1,5 @@
 """
-Pipeline principal que orquestra a ingestão de Organization, Location, Patient, Encounter e EncounterED.
+Pipeline principal que orquestra a ingestão de Organization, Location, Patient, Encounter, EncounterED e EncounterICU.
 """
 
 from __future__ import annotations
@@ -18,11 +18,13 @@ from src.db.schema import build_project_metadata
 from src.ingestion.loaders.location_loader import LocationLoader
 from src.ingestion.loaders.encounter_loader import EncounterLoader
 from src.ingestion.loaders.encounter_ed_loader import EncounterEDLoader
+from src.ingestion.loaders.encounter_icu_loader import EncounterICULoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
 from src.pipelines.base_resource_pipeline import ResourceIngestionSummary
 from src.pipelines.ingest_encounter import EncounterIngestionPipeline
 from src.pipelines.ingest_encounter_ed import EncounterEDIngestionPipeline
+from src.pipelines.ingest_encounter_icu import EncounterICUIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
 from src.pipelines.ingest_patient import PatientIngestionPipeline
@@ -61,6 +63,8 @@ class IngestAllPipeline:
             settings.encounter.table_name,
             settings.encounter.auxiliary_table_name or "encounter_location",
             settings.encounter_ed.table_name,
+            settings.encounter_icu.table_name,
+            settings.encounter_icu.auxiliary_table_name or "encounter_icu_location",
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -68,6 +72,7 @@ class IngestAllPipeline:
         self._patient_loader = PatientLoader(tables.patient)
         self._encounter_loader = EncounterLoader(tables.encounter)
         self._encounter_ed_loader = EncounterEDLoader(tables.encounter_ed)
+        self._encounter_icu_loader = EncounterICULoader(tables.encounter_icu)
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
                 settings=settings,
@@ -89,6 +94,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._encounter_ed_loader,
             ),
+            "encounter_icu": EncounterICUIngestionPipeline(
+                settings=settings,
+                loader=self._encounter_icu_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -104,9 +113,10 @@ class IngestAllPipeline:
             "patient",
             "encounter",
             "encounter_ed",
+            "encounter_icu",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu')."
             )
 
         started_at = perf_counter()

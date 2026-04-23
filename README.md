@@ -20,6 +20,7 @@ Arquivos suportados:
 
 4. `data/MimicEncounter.ndjson.gz`
 5. `data/MimicEncounterED.ndjson.gz`
+6. `data/MimicEncounterICU.ndjson.gz`
 
 A ordem de importação é obrigatória:
 
@@ -28,6 +29,7 @@ A ordem de importação é obrigatória:
 3. `Patient`
 4. `Encounter`
 5. `EncounterED`
+6. `EncounterICU`
 
 A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. O desenho continua preparado para novas fases sem exigir acoplamento excessivo entre recursos.
 
@@ -94,6 +96,11 @@ As configurações não sensíveis ficam versionadas em YAML:
   - caminho do arquivo de `EncounterED`
   - batch size
   - nome físico da tabela especializada
+- `config/ingestion/encounter_icu.yaml`
+  - caminho do arquivo de `EncounterICU`
+  - batch size
+  - nome físico da tabela especializada
+  - nome físico da tabela auxiliar de localizações
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -113,10 +120,10 @@ Execute a pipeline completa com:
 uv run python -m src.main
 ```
 
-Também é possível usar o atalho:
+Também é possível usar diretamente:
 
 ```bash
-uv run python main.py
+python -m src.main
 ```
 
 ## Ordem Da Pipeline
@@ -130,6 +137,7 @@ A execução principal segue exatamente esta ordem:
 5. ingestão de `Patient`
 6. ingestão de `Encounter`
 7. ingestão de `EncounterED`
+8. ingestão de `EncounterICU`
 
 ## Modelagem Final
 
@@ -193,6 +201,24 @@ A execução principal segue exatamente esta ordem:
 - `discharge_disposition_code`
 - `identifier`
 
+### Tabela `encounter_icu`
+
+- `id` `PK`
+- `encounter_id` `FK -> encounter.id` `nullable`
+- `patient_id` `FK -> patient.id` `nullable`
+- `status`
+- `class_code`
+- `start_date`
+- `end_date`
+- `identifier`
+
+### Tabela `encounter_icu_location`
+
+- `encounter_icu_id` `FK -> encounter_icu.id`
+- `location_id` `FK -> location.id` `nullable`
+- `start_date`
+- `end_date`
+
 ## Estratégia De Consolidação
 
 Quando uma estrutura FHIR contém listas, a ingestão adota sempre o **primeiro valor não vazio e válido encontrado**.
@@ -218,6 +244,8 @@ No `Encounter`, a referência `serviceProvider.reference` é usada como fonte pr
 
 No `EncounterED`, `partOf.reference` materializa `encounter_id` e deixa explícita a relação de especialização com `encounter`.
 
+No `EncounterICU`, `partOf.reference` materializa `encounter_id`, `subject.reference` materializa `patient_id` e o relacionamento com `organization` não é criado, porque não foi identificado `serviceProvider.reference` nos arquivos observados.
+
 ## Relacionamentos
 
 - `location.managing_organization_id -> organization.id`
@@ -229,6 +257,10 @@ No `EncounterED`, `partOf.reference` materializa `encounter_id` e deixa explíci
 - `encounter_ed.encounter_id -> encounter.id`
 - `encounter_ed.patient_id -> patient.id`
 - `encounter_ed.organization_id -> organization.id`
+- `encounter_icu.encounter_id -> encounter.id`
+- `encounter_icu.patient_id -> patient.id`
+- `encounter_icu_location.encounter_icu_id -> encounter_icu.id`
+- `encounter_icu_location.location_id -> location.id`
 
 Se a referência estiver ausente, a coluna permanece nula quando isso fizer sentido. Se existir, o valor precisa seguir o formato FHIR correto. O parser reutilizável de referências fica em `src/ingestion/parsers/fhir_reference_parser.py`.
 
@@ -266,7 +298,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter` e `EncounterED`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED` e `EncounterICU`
 
 ## Entrada Principal
 
@@ -282,18 +314,18 @@ Exemplo de terminal:
 
 ```text
 2026-04-23 12:00:00,000 | INFO | src.main | Logging configurado em /path/to/logs/ingestion.log
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... encounter_ed_lidos=... encounter_ed_inseridos=... tempo=...
+2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... encounter_ed_lidos=... encounter_ed_inseridos=... encounter_icu_lidos=... encounter_icu_inseridos=... tempo=...
 ```
 
 Exemplo de log em arquivo:
 
 ```text
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed')
+2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu')
 2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicEncounterED.ndjson.gz para recurso EncounterED
-2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo EncounterED: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter_ed': ...}
+2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicEncounterICU.ndjson.gz para recurso EncounterICU
+2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo EncounterICU: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter_icu': ..., 'encounter_icu_location': ...}
 ```
 
 ## Evolução Futura

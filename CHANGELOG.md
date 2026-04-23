@@ -4,6 +4,43 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.7.0] - 2026-04-23
+
+### Adicionado
+
+- Suporte à ingestão do arquivo `data/MimicEncounterICU.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+  6. `EncounterICU`
+- Nova tabela principal `encounter_icu` com FKs para:
+  - `encounter.id`
+  - `patient.id`
+- Nova tabela auxiliar `encounter_icu_location` com FKs para:
+  - `encounter_icu.id`
+  - `location.id`
+- Transformer e loader dedicados para `EncounterICU`.
+- Testes de unidade para o transformer de `EncounterICU`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com diagramas ASCII segmentados por relacionamento, incluindo a especialização de UTI.
+- Atualização do `README.md` para documentar a nova fase de ingestão, a modelagem de `EncounterICU` e a documentação relacional segmentada.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/encounter_icu.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `encounter_icu` e `encounter_icu_location`.
+- Expansão do resumo final de ingestão para contemplar `EncounterICU`.
+- Consolidação da documentação da modelagem relacional simplificada da segunda fase.
+
+### Corrigido
+
+- Tratamento de referências FHIR em `EncounterICU.partOf.reference`, `EncounterICU.subject.reference` e `EncounterICU.location[*].location.reference`.
+- Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
+- Preservação da decisão arquitetural de não criar relacionamento com `organization` para `EncounterICU` sem evidência no arquivo de origem.
+
 ## [0.6.0] - 2026-04-23
 
 ### Adicionado

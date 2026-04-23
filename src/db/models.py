@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from src.db.schema import (
     EncounterEDTables,
+    EncounterICUTables,
     EncounterTables,
     LocationTables,
     OrganizationTables,
@@ -17,6 +18,7 @@ __all__ = [
     "LocationTables",
     "EncounterTables",
     "EncounterEDTables",
+    "EncounterICUTables",
     "OrganizationTables",
     "PatientTables",
     "ProjectTables",

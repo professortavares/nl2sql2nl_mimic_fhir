@@ -1,5 +1,6 @@
 """
-Definição do schema relacional enxuto para Organization, Location e Patient.
+Definição do schema relacional enxuto para Organization, Location, Patient,
+Encounter, EncounterED e EncounterICU.
 """
 
 from __future__ import annotations
@@ -49,6 +50,14 @@ class EncounterEDTables:
 
 
 @dataclass(slots=True, frozen=True)
+class EncounterICUTables:
+    """Referência às tabelas de EncounterICU."""
+
+    encounter_icu: Table
+    encounter_icu_location: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -57,6 +66,7 @@ class ProjectTables:
     patient: PatientTables
     encounter: EncounterTables
     encounter_ed: EncounterEDTables
+    encounter_icu: EncounterICUTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -100,6 +110,8 @@ def build_project_metadata(
     encounter_table_name: str,
     encounter_location_table_name: str,
     encounter_ed_table_name: str,
+    encounter_icu_table_name: str,
+    encounter_icu_location_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -120,6 +132,10 @@ def build_project_metadata(
         Nome físico da tabela auxiliar de Encounter/Location.
     encounter_ed_table_name : str
         Nome físico da tabela de EncounterED.
+    encounter_icu_table_name : str
+        Nome físico da tabela de EncounterICU.
+    encounter_icu_location_table_name : str
+        Nome físico da tabela auxiliar de EncounterICU/Location.
 
     Retorno:
     -------
@@ -134,6 +150,8 @@ def build_project_metadata(
     validate_identifier(encounter_table_name, label="encounter table")
     validate_identifier(encounter_location_table_name, label="encounter_location table")
     validate_identifier(encounter_ed_table_name, label="encounter_ed table")
+    validate_identifier(encounter_icu_table_name, label="encounter_icu table")
+    validate_identifier(encounter_icu_location_table_name, label="encounter_icu_location table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -269,6 +287,58 @@ def build_project_metadata(
     Index(f"ix_{encounter_ed_table_name}_patient_id", encounter_ed.c.patient_id)
     Index(f"ix_{encounter_ed_table_name}_organization_id", encounter_ed.c.organization_id)
 
+    encounter_icu = Table(
+        encounter_icu_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("class_code", String(50), nullable=True),
+        Column("start_date", String(30), nullable=True),
+        Column("end_date", String(30), nullable=True),
+        Column("identifier", Text(), nullable=True),
+    )
+    Index(f"ix_{encounter_icu_table_name}_encounter_id", encounter_icu.c.encounter_id)
+    Index(f"ix_{encounter_icu_table_name}_patient_id", encounter_icu.c.patient_id)
+
+    encounter_icu_location = Table(
+        encounter_icu_location_table_name,
+        metadata,
+        Column(
+            "encounter_icu_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_icu_table_name}.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        Column(
+            "location_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{location_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("start_date", String(30), nullable=True),
+        Column("end_date", String(30), nullable=True),
+    )
+    Index(
+        f"ix_{encounter_icu_location_table_name}_encounter_icu_id",
+        encounter_icu_location.c.encounter_icu_id,
+    )
+    Index(
+        f"ix_{encounter_icu_location_table_name}_location_id",
+        encounter_icu_location.c.location_id,
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -278,4 +348,8 @@ def build_project_metadata(
             encounter_location=encounter_location,
         ),
         encounter_ed=EncounterEDTables(encounter_ed=encounter_ed),
+        encounter_icu=EncounterICUTables(
+            encounter_icu=encounter_icu,
+            encounter_icu_location=encounter_icu_location,
+        ),
     )

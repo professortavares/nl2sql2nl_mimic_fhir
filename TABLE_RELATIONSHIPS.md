@@ -1,6 +1,7 @@
 # Relacionamentos Entre Tabelas
 
 Este documento resume a modelagem relacional atualmente criada pela pipeline de ingestão.
+A documentação está separada em blocos menores para facilitar a leitura por relacionamento.
 
 ## Tabelas Existentes
 
@@ -10,6 +11,8 @@ Este documento resume a modelagem relacional atualmente criada pela pipeline de 
 - `encounter`
 - `encounter_location`
 - `encounter_ed`
+- `encounter_icu`
+- `encounter_icu_location`
 
 ## Foreign Keys
 
@@ -22,6 +25,10 @@ Este documento resume a modelagem relacional atualmente criada pela pipeline de 
 - `encounter_ed.encounter_id -> encounter.id`
 - `encounter_ed.patient_id -> patient.id`
 - `encounter_ed.organization_id -> organization.id`
+- `encounter_icu.encounter_id -> encounter.id`
+- `encounter_icu.patient_id -> patient.id`
+- `encounter_icu_location.encounter_icu_id -> encounter_icu.id`
+- `encounter_icu_location.location_id -> location.id`
 
 ## Diagramas Segmentados
 
@@ -180,7 +187,59 @@ Este documento resume a modelagem relacional atualmente criada pela pipeline de 
 +----------------------+
 ```
 
-### 6) Visão Consolidada
+### 6) EncounterICU e seus vínculos
+
+```text
++----------------------+
+|      encounter       |
+|----------------------|
+| id (PK)              |
+| ...                  |
++----------------------+
+           ^
+           |
+           |
++----------------------+
+|    encounter_icu    |
+|----------------------|
+| id (PK)              |
+| encounter_id (FK)    |
+| patient_id (FK)      |
+| status               |
+| class_code           |
+| start_date           |
+| end_date             |
+| identifier           |
++----------------------+
+           |
+           |
+           v
++----------------------------+
+| encounter_icu_location     |
+|----------------------------|
+| encounter_icu_id (FK)      |
+| location_id (FK)           |
+| start_date                 |
+| end_date                   |
++----------------------------+
+
++----------------------+
+|       patient        |
+|----------------------|
+| id (PK)              |
+| ...                  |
++----------------------+
+
++----------------------+
+|       location       |
+|----------------------|
+| id (PK)              |
+| name                 |
+| managing_organization_id (FK)
++----------------------+
+```
+
+### 7) Visão Consolidada
 
 ```text
 +----------------------+      +----------------------+
@@ -213,28 +272,43 @@ Este documento resume a modelagem relacional atualmente criada pela pipeline de 
            |                  +----------------------+
            |                             ^
            |                             |
-           |                             |
-           |                  +----------------------+
-           |                  |    encounter_ed      |
-           |                  |----------------------|
-           |                  | id (PK)              |
-           |                  | encounter_id (FK)    |
-           |                  | patient_id (FK)      |
-           |                  | organization_id (FK) |
-           |                  | ...                  |
-           |                  +----------------------+
+           |                  +----------+-----------+
+           |                  |                      |
+           |                  v                      v
+           |         +----------------------+  +----------------------+
+           |         |  encounter_location  |  |    encounter_ed      |
+           |         |----------------------|  |----------------------|
+           |         | encounter_id (FK)    |  | id (PK)              |
+           |         | location_id (FK)     |  | encounter_id (FK)    |
+           |         | start_date           |  | patient_id (FK)      |
+           |         | end_date             |  | organization_id (FK) |
+           |         +----------------------+  | ...                  |
+           |                                     +----------------------+
            |
-           +------------------------------+
-                                          |
-                                          v
-                                 +----------------------+
-                                 |  encounter_location  |
-                                 |----------------------|
-                                 | encounter_id (FK)    |
-                                 | location_id (FK)     |
-                                 | start_date           |
-                                 | end_date             |
-                                 +----------------------+
+           +----------------------------------------------+
+                                                          |
+                                                          v
+                                              +----------------------------+
+                                              | encounter_icu_location     |
+                                              |----------------------------|
+                                              | encounter_icu_id (FK)      |
+                                              | location_id (FK)           |
+                                              | start_date                 |
+                                              | end_date                   |
+                                              +----------------------------+
+
++----------------------+
+|    encounter_icu    |
+|----------------------|
+| id (PK)              |
+| encounter_id (FK)    |
+| patient_id (FK)      |
+| status               |
+| class_code           |
+| start_date           |
+| end_date             |
+| identifier           |
++----------------------+
 ```
 
 ## Observações
@@ -242,4 +316,5 @@ Este documento resume a modelagem relacional atualmente criada pela pipeline de 
 - `encounter_location` preserva múltiplas localizações associadas ao mesmo encounter.
 - `encounter.organization_id` usa preferencialmente `serviceProvider.reference`.
 - `encounter_ed.encounter_id` vem de `partOf.reference` e materializa a relação com o encounter-pai.
+- `encounter_icu.encounter_id` também vem de `partOf.reference`, mas `encounter_icu` não cria FK com `organization` porque esse vínculo não foi identificado no arquivo de origem.
 - `identifier[*].assigner.reference` aparece nos dados, mas não é materializado como coluna independente nesta fase.
