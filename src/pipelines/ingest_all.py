@@ -1,7 +1,7 @@
 """
 Pipeline principal que orquestra a ingestão de Organization, Location, Patient,
-Encounter, EncounterED, EncounterICU, Medication, MedicationMix e
-MedicationRequest, Specimen e Condition.
+Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
+MedicationRequest, Specimen, Condition, ConditionED e Procedure.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from src.ingestion.loaders.medication_mix_loader import MedicationMixLoader
 from src.ingestion.loaders.medication_request_loader import MedicationRequestLoader
 from src.ingestion.loaders.condition_loader import ConditionLoader
 from src.ingestion.loaders.condition_ed_loader import ConditionEDLoader
+from src.ingestion.loaders.procedure_loader import ProcedureLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -38,6 +39,7 @@ from src.pipelines.ingest_medication_mix import MedicationMixIngestionPipeline
 from src.pipelines.ingest_medication_request import MedicationRequestIngestionPipeline
 from src.pipelines.ingest_condition import ConditionIngestionPipeline
 from src.pipelines.ingest_condition_ed import ConditionEDIngestionPipeline
+from src.pipelines.ingest_procedure import ProcedureIngestionPipeline
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -86,6 +88,7 @@ class IngestAllPipeline:
             settings.specimen.table_name,
             settings.condition.table_name,
             settings.condition_ed.table_name,
+            settings.procedure.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -111,6 +114,11 @@ class IngestAllPipeline:
         )
         self._condition_ed_loader = ConditionEDLoader(
             tables=tables.condition_ed,
+            patient_tables=tables.patient,
+            encounter_tables=tables.encounter,
+        )
+        self._procedure_loader = ProcedureLoader(
+            tables=tables.procedure,
             patient_tables=tables.patient,
             encounter_tables=tables.encounter,
         )
@@ -163,6 +171,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._condition_ed_loader,
             ),
+            "procedure": ProcedureIngestionPipeline(
+                settings=settings,
+                loader=self._procedure_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -185,9 +197,10 @@ class IngestAllPipeline:
             "specimen",
             "condition",
             "condition_ed",
+            "procedure",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure')."
             )
 
         started_at = perf_counter()

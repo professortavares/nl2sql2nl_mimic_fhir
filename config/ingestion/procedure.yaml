@@ -1,0 +1,4 @@
+pipeline_name: ingest_procedure
+input_path: data/MimicProcedure.ndjson.gz
+batch_size: 500
+table_name: procedure

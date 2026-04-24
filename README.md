@@ -33,6 +33,10 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 11. `MimicCondition.ndjson.gz`
 12. `MimicConditionED.ndjson.gz`
 
+### Fase 6
+
+13. `MimicProcedure.ndjson.gz`
+
 ### Ordem obrigatória da pipeline
 
 1. reset completo do schema
@@ -49,6 +53,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 12. ingestão de `Specimen`
 13. ingestão de `Condition`
 14. ingestão de `ConditionED`
+15. ingestão de `Procedure`
 
 ## Pré-requisitos
 
@@ -136,6 +141,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/procedure.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -180,6 +189,7 @@ python -m src.main
 - `specimen`
 - `condition`
 - `condition_ed`
+- `procedure`
 
 ### Organização, Location e Patient
 
@@ -352,6 +362,8 @@ Em `Condition`, o código principal e a categoria também seguem a mesma regra d
 
 Em `ConditionED`, o código principal e a categoria seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
+Em `Procedure`, o código do procedimento segue a mesma regra de consolidação por primeiro valor útil encontrado.
+
 ### Condition
 
 `Condition` entra nesta fase com relacionamento para `Patient` e `Encounter`.
@@ -383,6 +395,22 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
   - `category_code`
   - `category_system`
   - `category_display`
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
+### Procedure
+
+`Procedure` entra nesta fase com relacionamento para `Patient` e `Encounter`.
+
+- `procedure`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `procedure_code`
+  - `procedure_code_system`
+  - `procedure_code_display`
+  - `performed_at`
 
 Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
@@ -428,6 +456,8 @@ Os relacionamentos atualmente materializados são:
 - `condition.encounter_id -> encounter.id`
 - `condition_ed.patient_id -> patient.id`
 - `condition_ed.encounter_id -> encounter.id`
+- `procedure.patient_id -> patient.id`
+- `procedure.encounter_id -> encounter.id`
 
 ## Logging
 
@@ -467,7 +497,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition` e `ConditionED`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED` e `Procedure`
 
 ## Documentação Relacional
 

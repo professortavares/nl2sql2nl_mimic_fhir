@@ -11,3 +11,4 @@ execution_order:
   - specimen
   - condition
   - condition_ed
+  - procedure

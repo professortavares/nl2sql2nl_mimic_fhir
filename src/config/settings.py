@@ -95,6 +95,7 @@ class ProjectSettings:
     specimen: ResourceIngestionSettings
     condition: ResourceIngestionSettings
     condition_ed: ResourceIngestionSettings
+    procedure: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -282,6 +283,7 @@ def load_project_settings() -> ProjectSettings:
     specimen_yaml = load_yaml_file(root / "config/ingestion/specimen.yaml")
     condition_yaml = load_yaml_file(root / "config/ingestion/condition.yaml")
     condition_ed_yaml = load_yaml_file(root / "config/ingestion/condition_ed.yaml")
+    procedure_yaml = load_yaml_file(root / "config/ingestion/procedure.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -399,6 +401,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/condition_ed.yaml",
         root=root,
     )
+    procedure = _load_resource_settings(
+        procedure_yaml,
+        source=root / "config/ingestion/procedure.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -417,6 +424,7 @@ def load_project_settings() -> ProjectSettings:
         specimen=specimen,
         condition=condition,
         condition_ed=condition_ed,
+        procedure=procedure,
     )
 
 

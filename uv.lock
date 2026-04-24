@@ -53,7 +53,7 @@ wheels = [
 
 [[package]]
 name = "nl2sql2nl-mimic-fhir"
-version = "0.13.0"
+version = "0.14.0"
 source = { virtual = "." }
 dependencies = [
     { name = "psycopg", extra = ["binary"] },
