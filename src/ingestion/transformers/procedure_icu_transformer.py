@@ -128,8 +128,12 @@ class ProcedureICUTransformer:
 
         if categories is None:
             return None
+        if isinstance(categories, Mapping):
+            return self._extract_coding_value(categories, key)
         if not isinstance(categories, list):
-            raise ProcedureICUTransformationError("O campo 'category' deve ser uma lista quando presente.")
+            raise ProcedureICUTransformationError(
+                "O campo 'category' deve ser um objeto FHIR ou uma lista quando presente."
+            )
         for index, category in enumerate(categories):
             if not isinstance(category, Mapping):
                 raise ProcedureICUTransformationError(

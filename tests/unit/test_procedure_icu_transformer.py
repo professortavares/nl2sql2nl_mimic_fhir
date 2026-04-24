@@ -35,17 +35,15 @@ def test_transform_procedure_icu_with_full_payload() -> None:
                     },
                 ]
             },
-            "category": [
-                {
-                    "coding": [
-                        {"code": "", "system": ""},
-                        {
-                            "code": "inpatient",
-                            "system": "http://terminology.hl7.org/CodeSystem/procedure-category",
-                        },
-                    ]
-                }
-            ],
+            "category": {
+                "coding": [
+                    {"code": "", "system": ""},
+                    {
+                        "code": "inpatient",
+                        "system": "http://terminology.hl7.org/CodeSystem/procedure-category",
+                    },
+                ]
+            },
             "performedPeriod": {"start": "2024-01-01T08:00:00Z", "end": "2024-01-01T10:30:00Z"},
             "meta": {"profile": ["ignored"]},
         }
@@ -79,7 +77,7 @@ def test_transform_procedure_icu_without_encounter() -> None:
             "status": "completed",
             "subject": {"reference": "Patient/pat-1"},
             "code": {"coding": [{"code": "12345"}]},
-            "category": [{"coding": [{"code": "inpatient"}]}],
+            "category": {"coding": [{"code": "inpatient"}]},
             "performedPeriod": {"start": "2024-01-01T08:00:00Z", "end": "2024-01-01T10:30:00Z"},
         }
     )
