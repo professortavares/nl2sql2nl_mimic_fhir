@@ -26,3 +26,4 @@ execution_order:
   - medication_dispense
   - medication_dispense_ed
   - medication_administration
+  - medication_administration_icu

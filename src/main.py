@@ -19,7 +19,8 @@ def main() -> int:
     ObservationLabevents, ObservationMicroTest, ObservationMicroOrg,
     ObservationMicroSusc, ObservationChartevents, ObservationDatetimeevents,
     ObservationOutputevents, ObservationED, ObservationVitalSignsED,
-    MedicationDispense, MedicationDispenseED e MedicationAdministration.
+    MedicationDispense, MedicationDispenseED, MedicationAdministration e
+    MedicationAdministrationICU.
 
     Retorno:
     -------

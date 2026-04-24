@@ -1,0 +1,4 @@
+pipeline_name: ingest_medication_administration_icu
+input_path: data/MimicMedicationAdministrationICU.ndjson.gz
+batch_size: 500
+table_name: medication_administration_icu
