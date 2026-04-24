@@ -27,6 +27,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_micro_test`
 - `observation_micro_org`
 - `observation_micro_org_has_member`
+- `observation_micro_susc`
 
 ## Foreign Keys
 
@@ -67,6 +68,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_micro_org.patient_id -> patient.id`
 - `observation_micro_org.derived_from_observation_micro_test_id -> observation_micro_test.id`
 - `observation_micro_org_has_member.observation_micro_org_id -> observation_micro_org.id`
+- `observation_micro_susc.patient_id -> patient.id`
+- `observation_micro_susc.derived_from_observation_micro_org_id -> observation_micro_org.id`
 
 ## Diagramas Segmentados
 
@@ -680,7 +683,43 @@ medication
 
 `member_observation_id` ainda não possui FK nesta etapa porque pode apontar para observações microbiológicas futuras ainda não ingeridas.
 
-### 19) Visão Consolidada
+### 19) observationMicroSusc com patient e observationMicroOrg
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_micro_susc.patient_id
+        |
++--------------------------+
+| observation_micro_susc   |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| derived_from_observation_micro_org_id |
+| antibiotic_code          |
+| interpretation_code      |
+| dilution_value           |
+| dilution_comparator      |
++--------------------------+
+        |
+        | observation_micro_susc.derived_from_observation_micro_org_id
+        v
++--------------------------+
+| observation_micro_org    |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| derived_from_observation_micro_test_id |
+| organism_code            |
++--------------------------+
+```
+
+### 20) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -717,6 +756,8 @@ patient --- observation_labevents --- specimen
 patient --- observation_micro_test --- specimen / encounter
 
 patient --- observation_micro_org --- observation_micro_test
+
+patient --- observation_micro_susc --- observation_micro_org
 
 observation_micro_org --- observation_micro_org_has_member
 ```

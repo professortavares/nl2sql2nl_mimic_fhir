@@ -4,6 +4,47 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.20.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationMicroSusc.ndjson.gz` como continuação da sétima fase de ingestão.
+- Nova tabela principal `observation_micro_susc` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `derived_from_observation_micro_org_id`
+  - `status`
+  - `antibiotic_code`
+  - `antibiotic_code_system`
+  - `antibiotic_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `identifier`
+  - `interpretation_code`
+  - `interpretation_system`
+  - `interpretation_display`
+  - `dilution_value`
+  - `dilution_comparator`
+  - `note`
+- Transformer, loader e pipeline dedicados para `ObservationMicroSusc`.
+- Testes de unidade para o transformer de `ObservationMicroSusc`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationMicroSusc` ao final.
+- Reestruturação do schema para incluir a tabela `observation_micro_susc` e suas FKs para `patient` e `observation_micro_org`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada, a ligação entre susceptibilidade e organismo identificado e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationMicroSusc`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_micro_susc.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]`, `identifier[*].value`, `valueCodeableConcept.coding[*]`, `extension[*]` e `note[*].text` para `ObservationMicroSusc`.
+- Consolidação explícita de `subject.reference` e `derivedFrom[*].reference` com os tipos esperados `Patient` e `Observation` para `ObservationMicroSusc`.
+- Normalização de `observation_micro_susc.patient_id` e `observation_micro_susc.derived_from_observation_micro_org_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.19.0] - 2026-04-24
 
 ### Adicionado
