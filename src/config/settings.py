@@ -92,6 +92,7 @@ class ProjectSettings:
     medication: ResourceIngestionSettings
     medication_mix: ResourceIngestionSettings
     medication_request: ResourceIngestionSettings
+    specimen: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -276,6 +277,7 @@ def load_project_settings() -> ProjectSettings:
     medication_yaml = load_yaml_file(root / "config/ingestion/medication.yaml")
     medication_mix_yaml = load_yaml_file(root / "config/ingestion/medication_mix.yaml")
     medication_request_yaml = load_yaml_file(root / "config/ingestion/medication_request.yaml")
+    specimen_yaml = load_yaml_file(root / "config/ingestion/specimen.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -378,6 +380,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/medication_request.yaml",
         root=root,
     )
+    specimen = _load_resource_settings(
+        specimen_yaml,
+        source=root / "config/ingestion/specimen.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -393,6 +400,7 @@ def load_project_settings() -> ProjectSettings:
         medication=medication,
         medication_mix=medication_mix,
         medication_request=medication_request,
+        specimen=specimen,
     )
 
 

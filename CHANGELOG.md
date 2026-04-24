@@ -4,6 +4,50 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.11.0] - 2026-04-24
+
+### Adicionado
+
+- Início da quarta fase de ingestão com suporte ao arquivo `data/MimicSpecimen.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+  6. `EncounterICU`
+  7. `Medication`
+  8. `MedicationMix`
+  9. `MedicationRequest`
+  10. `Specimen`
+- Nova tabela principal `specimen` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `specimen_type_code`
+  - `specimen_type_system`
+  - `specimen_type_display`
+  - `collected_at`
+  - `identifier`
+- Transformer, loader e pipeline dedicados para `Specimen`.
+- Testes de unidade para o transformer e o loader de `Specimen`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com a nova tabela e o vínculo com `Patient`.
+- Atualização do `README.md` para documentar a nova fase, a modelagem simplificada e o relacionamento de `Specimen`.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/specimen.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `specimen`.
+- Expansão do resumo final de ingestão para contemplar `Specimen`.
+- Atualização da versão do pacote para refletir a nova etapa.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `type.coding[*]`, `identifier[*]` e `collection.collectedDateTime`.
+- Consolidação explícita de `subject.reference` com o tipo esperado `Patient`.
+- Normalização de `specimen.patient_id` para `NULL` quando a referência aponta para um `Patient` inexistente no conjunto já carregado, preservando a ingestão e registrando o evento em log.
+- Preservação da estratégia explícita de manter a modelagem enxuta, sem tabelas auxiliares para `Specimen`.
+
 ## [0.10.0] - 2026-04-24
 
 ### Adicionado

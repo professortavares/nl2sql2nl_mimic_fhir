@@ -24,6 +24,10 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 8. `MimicMedicationMix.ndjson.gz`
 9. `MimicMedicationRequest.ndjson.gz`
 
+### Fase 4
+
+10. `MimicSpecimen.ndjson.gz`
+
 ### Ordem obrigatória da pipeline
 
 1. reset completo do schema
@@ -37,6 +41,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 9. ingestão de `Medication`
 10. ingestão de `MedicationMix`
 11. ingestão de `MedicationRequest`
+12. ingestão de `Specimen`
 
 ## Pré-requisitos
 
@@ -112,6 +117,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/specimen.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -153,6 +162,7 @@ python -m src.main
 - `medication_mix`
 - `medication_mix_ingredient`
 - `medication_request`
+- `specimen`
 
 ### Organização, Location e Patient
 
@@ -301,6 +311,10 @@ Isso vale, por exemplo, para:
 - `dosageInstruction[*].timing.code.coding[*].code`
 - `dosageInstruction[*].doseAndRate[*].doseQuantity.value`
 - `dosageInstruction[*].doseAndRate[*].doseQuantity.unit`
+- `type.coding[*].code`
+- `type.coding[*].system`
+- `type.coding[*].display`
+- `collection.collectedDateTime`
 
 Em `Medication`, os identificadores são consolidados por `system`:
 
@@ -311,6 +325,23 @@ Em `Medication`, os identificadores são consolidados por `system`:
 Em `MedicationMix`, o `identifier` é simplificado para o primeiro valor válido encontrado e os ingredientes são preservados em tabela auxiliar.
 
 Em `MedicationRequest`, a dosagem é consolidada no primeiro conjunto útil encontrado, sem criar tabelas auxiliares.
+
+Em `Specimen`, o tipo e o identificador seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
+### Specimen
+
+`Specimen` entra nesta fase com relacionamento para `Patient`.
+
+- `specimen`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `specimen_type_code`
+  - `specimen_type_system`
+  - `specimen_type_display`
+  - `collected_at`
+  - `identifier`
+
+Se a referência de `Patient` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
 ## Relacionamentos
 
@@ -334,6 +365,7 @@ Os relacionamentos atualmente materializados são:
 - `medication_request.patient_id -> patient.id`
 - `medication_request.encounter_id -> encounter.id`
 - `medication_request.medication_id -> medication.id`
+- `specimen.patient_id -> patient.id`
 
 ## Logging
 
@@ -373,7 +405,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix` e `MedicationRequest`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest` e `Specimen`
 
 ## Documentação Relacional
 

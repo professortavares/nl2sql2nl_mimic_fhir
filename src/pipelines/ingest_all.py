@@ -1,7 +1,7 @@
 """
 Pipeline principal que orquestra a ingestão de Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix e
-MedicationRequest.
+MedicationRequest e Specimen.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from src.ingestion.loaders.encounter_icu_loader import EncounterICULoader
 from src.ingestion.loaders.medication_loader import MedicationLoader
 from src.ingestion.loaders.medication_mix_loader import MedicationMixLoader
 from src.ingestion.loaders.medication_request_loader import MedicationRequestLoader
+from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
 from src.pipelines.base_resource_pipeline import ResourceIngestionSummary
@@ -33,6 +34,7 @@ from src.pipelines.ingest_encounter_icu import EncounterICUIngestionPipeline
 from src.pipelines.ingest_medication import MedicationIngestionPipeline
 from src.pipelines.ingest_medication_mix import MedicationMixIngestionPipeline
 from src.pipelines.ingest_medication_request import MedicationRequestIngestionPipeline
+from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
 from src.pipelines.ingest_patient import PatientIngestionPipeline
@@ -77,6 +79,7 @@ class IngestAllPipeline:
             settings.medication_mix.table_name,
             settings.medication_mix.auxiliary_table_name or "medication_mix_ingredient",
             settings.medication_request.table_name,
+            settings.specimen.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -90,6 +93,10 @@ class IngestAllPipeline:
         self._medication_request_loader = MedicationRequestLoader(
             tables=tables.medication_request,
             medication_tables=tables.medication,
+        )
+        self._specimen_loader = SpecimenLoader(
+            tables=tables.specimen,
+            patient_tables=tables.patient,
         )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
@@ -128,6 +135,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._medication_request_loader,
             ),
+            "specimen": SpecimenIngestionPipeline(
+                settings=settings,
+                loader=self._specimen_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -147,9 +158,10 @@ class IngestAllPipeline:
             "medication",
             "medication_mix",
             "medication_request",
+            "specimen",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen')."
             )
 
         started_at = perf_counter()

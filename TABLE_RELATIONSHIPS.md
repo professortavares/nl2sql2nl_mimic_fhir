@@ -17,6 +17,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_mix`
 - `medication_mix_ingredient`
 - `medication_request`
+- `specimen`
 
 ## Foreign Keys
 
@@ -38,6 +39,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_request.patient_id -> patient.id`
 - `medication_request.encounter_id -> encounter.id`
 - `medication_request.medication_id -> medication.id`
+- `specimen.patient_id -> patient.id`
 
 ## Diagramas Segmentados
 
@@ -333,7 +335,32 @@ medication
 +----------------------+
 ```
 
-### 10) Visão Consolidada
+### 10) Specimen e Patient
+
+```text
++----------------------+
+|       patient        |
+|----------------------|
+| id (PK)              |
+| ...                  |
++----------------------+
+           ^
+           |
+           |
++----------------------+
+|       specimen       |
+|----------------------|
+| id (PK)              |
+| patient_id (FK)      |
+| specimen_type_code   |
+| specimen_type_system |
+| specimen_type_display|
+| collected_at        |
+| identifier          |
++----------------------+
+```
+
+### 11) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -352,4 +379,6 @@ medication  <--- medication_mix_ingredient ---> medication_mix
       ^
       |
       +--- medication_request --- patient / encounter
+
+patient --- specimen
 ```

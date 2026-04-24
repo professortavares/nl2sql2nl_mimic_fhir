@@ -8,3 +8,4 @@ execution_order:
   - medication
   - medication_mix
   - medication_request
+  - specimen

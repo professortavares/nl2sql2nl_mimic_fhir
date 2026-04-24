@@ -15,6 +15,7 @@ from src.db.schema import (
     OrganizationTables,
     PatientTables,
     ProjectTables,
+    SpecimenTables,
 )
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "MedicationRequestTables",
     "OrganizationTables",
     "PatientTables",
+    "SpecimenTables",
     "ProjectTables",
 ]
