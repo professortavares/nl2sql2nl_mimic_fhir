@@ -46,6 +46,10 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 18. `MimicObservationMicroOrg.ndjson.gz`
 19. `MimicObservationMicroSusc.ndjson.gz`
 
+### Fase 8
+
+20. `MimicObservationChartevents.ndjson.gz`
+
 ### Ordem obrigatória da pipeline
 
 1. reset completo do schema
@@ -69,6 +73,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 19. ingestão de `ObservationMicroTest`
 20. ingestão de `ObservationMicroOrg`
 21. ingestão de `ObservationMicroSusc`
+22. ingestão de `ObservationChartevents`
 
 ## Pré-requisitos
 
@@ -185,6 +190,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/observation_chartevents.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -237,6 +246,7 @@ python -m src.main
 - `observation_micro_org`
 - `observation_micro_org_has_member`
 - `observation_micro_susc`
+- `observation_chartevents`
 
 ### Organização, Location e Patient
 
@@ -422,6 +432,8 @@ Em `ObservationMicroTest`, o código, a categoria e o valor seguem a mesma regra
 Em `ObservationMicroOrg`, o código do organismo, a categoria e o valor também seguem a mesma regra de consolidação por primeiro valor útil encontrado, enquanto `hasMember` é materializado em tabela auxiliar com múltiplas linhas.
 
 Em `ObservationMicroSusc`, o código do antibiótico, a categoria e a interpretação seguem a mesma regra de consolidação por primeiro valor útil encontrado, enquanto a extensão `dilution-details` é mapeada para colunas escalares.
+
+Em `ObservationChartevents`, o código, a categoria, o valor numérico e o valor textual seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 ### Condition
 
@@ -624,6 +636,32 @@ Se a referência de `Patient` ou `ObservationMicroTest` não estiver presente no
 
 Se a referência de `Patient` ou `ObservationMicroOrg` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
+### ObservationChartevents
+
+`ObservationChartevents` inicia a oitava fase com relacionamento para `Patient` e `Encounter`.
+
+- `observation_chartevents`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+  - `value_string`
+
+`encounter` é opcional aqui porque nem todos os registros carregam `encounter.reference`.
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -682,6 +720,8 @@ Os relacionamentos atualmente materializados são:
 - `observation_micro_org_has_member.observation_micro_org_id -> observation_micro_org.id`
 - `observation_micro_susc.patient_id -> patient.id`
 - `observation_micro_susc.derived_from_observation_micro_org_id -> observation_micro_org.id`
+- `observation_chartevents.patient_id -> patient.id`
+- `observation_chartevents.encounter_id -> encounter.id`
 
 ## Logging
 
@@ -721,7 +761,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg` e `ObservationMicroSusc`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc` e `ObservationChartevents`
 
 ## Documentação Relacional
 

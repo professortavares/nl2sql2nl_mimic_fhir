@@ -4,6 +4,45 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.21.0] - 2026-04-24
+
+### Adicionado
+
+- Início da oitava fase de ingestão com suporte ao arquivo `data/MimicObservationChartevents.ndjson.gz`.
+- Nova tabela principal `observation_chartevents` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+  - `value_string`
+- Transformer, loader e pipeline dedicados para `ObservationChartevents`.
+- Testes de unidade para o transformer de `ObservationChartevents`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationChartevents` ao final.
+- Reestruturação do schema para incluir a tabela `observation_chartevents` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationChartevents`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_chartevents.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]`, `valueQuantity[*]` e `valueString` para `ObservationChartevents`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter` para `ObservationChartevents`.
+- Normalização de `observation_chartevents.patient_id` e `observation_chartevents.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.20.0] - 2026-04-24
 
 ### Adicionado
