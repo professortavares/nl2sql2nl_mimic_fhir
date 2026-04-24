@@ -22,6 +22,7 @@ def test_parse_fhir_reference_valid() -> None:
     assert parse_fhir_reference("Location/abc-123", "Location") == "abc-123"
     assert parse_fhir_reference("Encounter/abc-123", "Encounter") == "abc-123"
     assert parse_fhir_reference("Medication/abc-123", "Medication") == "abc-123"
+    assert parse_fhir_reference("Specimen/abc-123", "Specimen") == "abc-123"
 
 
 @pytest.mark.parametrize(

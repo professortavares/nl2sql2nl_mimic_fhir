@@ -14,3 +14,4 @@ execution_order:
   - procedure
   - procedure_ed
   - procedure_icu
+  - observation_labevents

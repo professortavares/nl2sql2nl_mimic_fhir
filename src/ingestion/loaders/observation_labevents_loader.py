@@ -1,0 +1,163 @@
+"""
+Persistência das linhas normalizadas de ObservationLabevents no PostgreSQL.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import Any, Sequence
+
+from sqlalchemy import Connection, Table, insert, select
+
+from src.db.schema import ObservationLabeventsTables, PatientTables, SpecimenTables
+
+LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(slots=True, frozen=True)
+class ObservationLabeventsBatchInsertCounts:
+    """Resumo das linhas inseridas em um lote de ObservationLabevents."""
+
+    primary_rows: int
+    orphan_patient_references: int = 0
+    orphan_specimen_references: int = 0
+
+    def table_counts(self) -> dict[str, int]:
+        """
+        Retorna a contagem de linhas por tabela.
+        """
+
+        return {"observation_labevents": self.primary_rows}
+
+
+class ObservationLabeventsLoader:
+    """
+    Persiste batches de ObservationLabevents na tabela simplificada.
+    """
+
+    def __init__(
+        self,
+        tables: ObservationLabeventsTables,
+        patient_tables: PatientTables,
+        specimen_tables: SpecimenTables,
+    ) -> None:
+        """
+        Inicializa o carregador.
+        """
+
+        self._tables = tables
+        self._patient_tables = patient_tables
+        self._specimen_tables = specimen_tables
+
+    @property
+    def tables(self) -> ObservationLabeventsTables:
+        """
+        Retorna as tabelas associadas ao carregador.
+        """
+
+        return self._tables
+
+    def insert_batch(
+        self,
+        connection: Connection,
+        batch: Sequence[dict[str, Any]],
+    ) -> ObservationLabeventsBatchInsertCounts:
+        """
+        Persiste um lote de observações laboratoriais transformadas.
+        """
+
+        if not batch:
+            return ObservationLabeventsBatchInsertCounts(0)
+
+        normalized_batch = [dict(row) for row in batch]
+        valid_patient_ids = self._fetch_existing_ids(
+            connection=connection,
+            table=self._patient_tables.patient,
+            column_name="patient_id",
+            batch=normalized_batch,
+        )
+        valid_specimen_ids = self._fetch_existing_ids(
+            connection=connection,
+            table=self._specimen_tables.specimen,
+            column_name="specimen_id",
+            batch=normalized_batch,
+        )
+
+        orphan_patient_references = self._nullify_orphan_references(
+            batch=normalized_batch,
+            reference_key="patient_id",
+            valid_ids=valid_patient_ids,
+            warning_label="patient_id",
+        )
+        orphan_specimen_references = self._nullify_orphan_references(
+            batch=normalized_batch,
+            reference_key="specimen_id",
+            valid_ids=valid_specimen_ids,
+            warning_label="specimen_id",
+        )
+
+        connection.execute(insert(self._tables.observation_labevents), normalized_batch)
+        return ObservationLabeventsBatchInsertCounts(
+            primary_rows=len(normalized_batch),
+            orphan_patient_references=orphan_patient_references,
+            orphan_specimen_references=orphan_specimen_references,
+        )
+
+    def _fetch_existing_ids(
+        self,
+        *,
+        connection: Connection,
+        table: Table,
+        column_name: str,
+        batch: Sequence[dict[str, Any]],
+    ) -> set[str]:
+        """
+        Busca os identificadores existentes para validar FKs.
+        """
+
+        requested_ids = {
+            item_id
+            for item_id in (row.get(column_name) for row in batch)
+            if isinstance(item_id, str) and item_id.strip()
+        }
+        if not requested_ids:
+            return set()
+
+        statement = select(table.c.id).where(table.c.id.in_(requested_ids))
+        return set(connection.execute(statement).scalars().all())
+
+    def _nullify_orphan_references(
+        self,
+        *,
+        batch: Sequence[dict[str, Any]],
+        reference_key: str,
+        valid_ids: set[str],
+        warning_label: str,
+    ) -> int:
+        """
+        Substitui por `NULL` as referências não encontradas.
+        """
+
+        orphan_rows = 0
+        orphan_counts: dict[str, int] = {}
+        for row in batch:
+            reference_id = row.get(reference_key)
+            if not isinstance(reference_id, str) or not reference_id.strip():
+                continue
+            if reference_id in valid_ids:
+                continue
+
+            row[reference_key] = None
+            orphan_rows += 1
+            orphan_counts[reference_id] = orphan_counts.get(reference_id, 0) + 1
+
+        for reference_id, count in orphan_counts.items():
+            LOGGER.warning(
+                "ObservationLabevents com %s órfão não encontrado: %s=%s linhas=%s",
+                warning_label,
+                warning_label,
+                reference_id,
+                count,
+            )
+        return orphan_rows
