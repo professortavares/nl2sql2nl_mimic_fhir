@@ -5,7 +5,7 @@ MedicationRequest, Specimen, Condition, ConditionED, Procedure,
 ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
 ObservationMicroOrg, ObservationMicroSusc, ObservationChartevents,
 ObservationDatetimeevents, ObservationOutputevents, ObservationED,
-ObservationVitalSignsED e MedicationDispense.
+ObservationVitalSignsED, MedicationDispense e MedicationDispenseED.
 """
 
 from __future__ import annotations
@@ -199,6 +199,13 @@ class MedicationDispenseTables:
 
 
 @dataclass(slots=True, frozen=True)
+class MedicationDispenseEDTables:
+    """Referência à tabela de MedicationDispenseED."""
+
+    medication_dispense_ed: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -227,6 +234,7 @@ class ProjectTables:
     observation_ed: ObservationEDTables
     observation_vital_signs_ed: ObservationVitalSignsEDTables
     medication_dispense: MedicationDispenseTables
+    medication_dispense_ed: MedicationDispenseEDTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -294,6 +302,7 @@ def build_project_metadata(
     observation_vital_signs_ed_table_name: str,
     observation_vital_signs_ed_component_table_name: str,
     medication_dispense_table_name: str,
+    medication_dispense_ed_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -362,6 +371,8 @@ def build_project_metadata(
         Nome físico da tabela auxiliar de components de ObservationVitalSignsED.
     medication_dispense_table_name : str
         Nome físico da tabela de MedicationDispense.
+    medication_dispense_ed_table_name : str
+        Nome físico da tabela de MedicationDispenseED.
 
     Retorno:
     -------
@@ -438,6 +449,10 @@ def build_project_metadata(
     validate_identifier(
         medication_dispense_table_name,
         label="medication_dispense table",
+    )
+    validate_identifier(
+        medication_dispense_ed_table_name,
+        label="medication_dispense_ed table",
     )
 
     metadata = MetaData(schema=schema_name)
@@ -1268,6 +1283,34 @@ def build_project_metadata(
         medication_dispense.c.medication_request_id,
     )
 
+    medication_dispense_ed = Table(
+        medication_dispense_ed_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("when_handed_over", String(40), nullable=True),
+        Column("medication_text", Text(), nullable=True),
+        Column("medication_code", String(100), nullable=True),
+        Column("medication_code_system", Text(), nullable=True),
+    )
+    Index(f"ix_{medication_dispense_ed_table_name}_patient_id", medication_dispense_ed.c.patient_id)
+    Index(
+        f"ix_{medication_dispense_ed_table_name}_encounter_id",
+        medication_dispense_ed.c.encounter_id,
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -1321,4 +1364,5 @@ def build_project_metadata(
             observation_vital_signs_ed_component=observation_vital_signs_ed_component,
         ),
         medication_dispense=MedicationDispenseTables(medication_dispense=medication_dispense),
+        medication_dispense_ed=MedicationDispenseEDTables(medication_dispense_ed=medication_dispense_ed),
     )
