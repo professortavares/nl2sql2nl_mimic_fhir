@@ -49,6 +49,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 ### Fase 8
 
 20. `MimicObservationChartevents.ndjson.gz`
+21. `MimicObservationDatetimeevents.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -74,6 +75,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 20. ingestão de `ObservationMicroOrg`
 21. ingestão de `ObservationMicroSusc`
 22. ingestão de `ObservationChartevents`
+23. ingestão de `ObservationDatetimeevents`
 
 ## Pré-requisitos
 
@@ -194,6 +196,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/observation_datetimeevents.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -247,6 +253,7 @@ python -m src.main
 - `observation_micro_org_has_member`
 - `observation_micro_susc`
 - `observation_chartevents`
+- `observation_datetimeevents`
 
 ### Organização, Location e Patient
 
@@ -434,6 +441,8 @@ Em `ObservationMicroOrg`, o código do organismo, a categoria e o valor também 
 Em `ObservationMicroSusc`, o código do antibiótico, a categoria e a interpretação seguem a mesma regra de consolidação por primeiro valor útil encontrado, enquanto a extensão `dilution-details` é mapeada para colunas escalares.
 
 Em `ObservationChartevents`, o código, a categoria, o valor numérico e o valor textual seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
+Em `ObservationDatetimeevents`, o código, a categoria e o valor temporal seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 ### Condition
 
@@ -662,6 +671,28 @@ Se a referência de `Patient` ou `ObservationMicroOrg` não estiver presente no 
 
 Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
+### ObservationDatetimeevents
+
+`ObservationDatetimeevents` complementa a oitava fase com relacionamento para `Patient` e `Encounter`.
+
+- `observation_datetimeevents`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value_datetime`
+
+`ObservationDatetimeevents` usa `valueDateTime`, enquanto `ObservationChartevents` guarda `valueQuantity` ou `valueString`.
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -722,6 +753,8 @@ Os relacionamentos atualmente materializados são:
 - `observation_micro_susc.derived_from_observation_micro_org_id -> observation_micro_org.id`
 - `observation_chartevents.patient_id -> patient.id`
 - `observation_chartevents.encounter_id -> encounter.id`
+- `observation_datetimeevents.patient_id -> patient.id`
+- `observation_datetimeevents.encounter_id -> encounter.id`
 
 ## Logging
 
@@ -761,7 +794,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc` e `ObservationChartevents`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents` e `ObservationDatetimeevents`
 
 ## Documentação Relacional
 

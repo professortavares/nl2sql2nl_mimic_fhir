@@ -4,6 +4,41 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.22.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationDatetimeevents.ndjson.gz` como continuação da oitava fase de ingestão.
+- Nova tabela principal `observation_datetimeevents` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value_datetime`
+- Transformer, loader e pipeline dedicados para `ObservationDatetimeevents`.
+- Testes de unidade para o transformer de `ObservationDatetimeevents`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationDatetimeevents` ao final.
+- Reestruturação do schema para incluir a tabela `observation_datetimeevents` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a diferença entre `valueDateTime` e `valueQuantity`/`valueString`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationDatetimeevents`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_datetimeevents.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]` e `valueDateTime` para `ObservationDatetimeevents`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter` para `ObservationDatetimeevents`.
+- Normalização de `observation_datetimeevents.patient_id` e `observation_datetimeevents.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.21.0] - 2026-04-24
 
 ### Adicionado
