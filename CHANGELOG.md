@@ -4,6 +4,37 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.15.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicProcedureED.ndjson.gz` como continuação da sexta fase de ingestão.
+- Nova tabela principal `procedure_ed` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `procedure_code`
+  - `procedure_code_system`
+  - `procedure_code_display`
+  - `performed_at`
+- Transformer, loader e pipeline dedicados para `ProcedureED`.
+- Testes de unidade para o transformer de `ProcedureED`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ProcedureED` ao final.
+- Reestruturação do schema para incluir a tabela `procedure_ed` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ProcedureED`.
+- Atualização da configuração YAML para incluir `config/ingestion/procedure_ed.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]` para `ProcedureED`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter` para `ProcedureED`.
+- Normalização de `procedure_ed.patient_id` e `procedure_ed.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.14.0] - 2026-04-24
 
 ### Adicionado
