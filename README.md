@@ -22,6 +22,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 
 7. `MimicMedication.ndjson.gz`
 8. `MimicMedicationMix.ndjson.gz`
+9. `MimicMedicationRequest.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -35,6 +36,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 8. ingestão de `EncounterICU`
 9. ingestão de `Medication`
 10. ingestão de `MedicationMix`
+11. ingestão de `MedicationRequest`
 
 ## Pré-requisitos
 
@@ -106,6 +108,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - batch size
   - nome da tabela principal
   - nome da tabela auxiliar de ingredientes
+- `config/ingestion/medication_request.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -146,6 +152,7 @@ python -m src.main
 - `medication`
 - `medication_mix`
 - `medication_mix_ingredient`
+- `medication_request`
 
 ### Organização, Location e Patient
 
@@ -223,7 +230,7 @@ python -m src.main
 
 ### Medication
 
-`Medication` entra nesta fase como uma **dimensão independente**.
+`Medication` entra nesta fase como uma **dimensão base de medicamentos**.
 
 - `medication`
   - `id` `PK`
@@ -248,6 +255,27 @@ Não foram observadas referências FHIR diretas confiáveis para `Patient`, `Enc
   - `medication_mix_id` `FK -> medication_mix.id`
   - `medication_id` `FK -> medication.id`
 
+### MedicationRequest
+
+`MedicationRequest` se relaciona com `Patient`, `Encounter` e `Medication`.
+
+- `medication_request`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `medication_id` `FK -> medication.id` `nullable`
+  - `intent`
+  - `status`
+  - `authored_on`
+  - `identifier`
+  - `validity_start`
+  - `validity_end`
+  - `dosage_text`
+  - `route_code`
+  - `frequency_code`
+  - `dose_value`
+  - `dose_unit`
+
 ### Estratégia de Consolidação
 
 Quando um recurso contém listas FHIR, a ingestão usa sempre o **primeiro valor não vazio e válido encontrado**.
@@ -265,7 +293,11 @@ Isso vale, por exemplo, para:
 - `code.coding[*].code`
 - `code.coding[*].system`
 - `ingredient[*].itemReference.reference`
-- identificadores de `Medication` filtrados por `system`
+- `dosageInstruction[*].text`
+- `dosageInstruction[*].route.coding[*].code`
+- `dosageInstruction[*].timing.code.coding[*].code`
+- `dosageInstruction[*].doseAndRate[*].doseQuantity.value`
+- `dosageInstruction[*].doseAndRate[*].doseQuantity.unit`
 
 Em `Medication`, os identificadores são consolidados por `system`:
 
@@ -274,6 +306,8 @@ Em `Medication`, os identificadores são consolidados por `system`:
 - `mimic-medication-name` -> `name`
 
 Em `MedicationMix`, o `identifier` é simplificado para o primeiro valor válido encontrado e os ingredientes são preservados em tabela auxiliar.
+
+Em `MedicationRequest`, a dosagem é consolidada no primeiro conjunto útil encontrado, sem criar tabelas auxiliares.
 
 ## Relacionamentos
 
@@ -294,6 +328,9 @@ Os relacionamentos atualmente materializados são:
 - `encounter_icu_location.location_id -> location.id`
 - `medication_mix_ingredient.medication_mix_id -> medication_mix.id`
 - `medication_mix_ingredient.medication_id -> medication.id`
+- `medication_request.patient_id -> patient.id`
+- `medication_request.encounter_id -> encounter.id`
+- `medication_request.medication_id -> medication.id`
 
 ## Logging
 
@@ -333,7 +370,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication` e `MedicationMix`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix` e `MedicationRequest`
 
 ## Documentação Relacional
 

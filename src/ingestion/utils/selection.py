@@ -117,3 +117,31 @@ def first_text_from_mappings_matching(
         if normalized is not None:
             return normalized
     return None
+
+
+def first_scalar_text(value: Any) -> str | None:
+    """
+    Normaliza o primeiro valor escalar não vazio encontrado.
+
+    Parâmetros:
+    ----------
+    value : Any
+        Valor escalar ou coleção de valores a ser normalizada.
+
+    Retorno:
+    -------
+    str | None
+        Texto normalizado ou `None` quando nada útil for encontrado.
+    """
+
+    if isinstance(value, str):
+        normalized = value.strip()
+        return normalized or None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            normalized_item = first_scalar_text(item)
+            if normalized_item is not None:
+                return normalized_item
+    return None

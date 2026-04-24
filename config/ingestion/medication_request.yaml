@@ -1,0 +1,4 @@
+pipeline_name: ingest_medication_request
+input_path: data/MimicMedicationRequest.ndjson.gz
+batch_size: 500
+table_name: medication_request

@@ -7,3 +7,4 @@ execution_order:
   - encounter_icu
   - medication
   - medication_mix
+  - medication_request

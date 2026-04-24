@@ -91,6 +91,7 @@ class ProjectSettings:
     encounter_icu: ResourceIngestionSettings
     medication: ResourceIngestionSettings
     medication_mix: ResourceIngestionSettings
+    medication_request: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -274,6 +275,7 @@ def load_project_settings() -> ProjectSettings:
     encounter_icu_yaml = load_yaml_file(root / "config/ingestion/encounter_icu.yaml")
     medication_yaml = load_yaml_file(root / "config/ingestion/medication.yaml")
     medication_mix_yaml = load_yaml_file(root / "config/ingestion/medication_mix.yaml")
+    medication_request_yaml = load_yaml_file(root / "config/ingestion/medication_request.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -371,6 +373,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/medication_mix.yaml",
         root=root,
     )
+    medication_request = _load_resource_settings(
+        medication_request_yaml,
+        source=root / "config/ingestion/medication_request.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -385,6 +392,7 @@ def load_project_settings() -> ProjectSettings:
         encounter_icu=encounter_icu,
         medication=medication,
         medication_mix=medication_mix,
+        medication_request=medication_request,
     )
 
 

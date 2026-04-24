@@ -16,6 +16,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication`
 - `medication_mix`
 - `medication_mix_ingredient`
+- `medication_request`
 
 ## Foreign Keys
 
@@ -34,6 +35,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `encounter_icu_location.location_id -> location.id`
 - `medication_mix_ingredient.medication_mix_id -> medication_mix.id`
 - `medication_mix_ingredient.medication_id -> medication.id`
+- `medication_request.patient_id -> patient.id`
+- `medication_request.encounter_id -> encounter.id`
+- `medication_request.medication_id -> medication.id`
 
 ## Diagramas Segmentados
 
@@ -244,9 +248,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 +----------------------+
 ```
 
-### 7) Medication como dimensão independente
+### 7) Medication como dimensão base
 
-`Medication` continua sem foreign keys diretas para os demais recursos clínicos nesta fase.
+`Medication` continua como dimensão base de medicamentos, sem foreign keys diretas para os demais recursos clínicos nesta fase.
 
 ```text
 +----------------------+
@@ -305,7 +309,31 @@ medication
 +----------------------+
 ```
 
-### 9) Visão Consolidada
+### 9) MedicationRequest com Patient, Encounter e Medication
+
+```text
++----------------------+
+|    medication_request |
+|----------------------|
+| id (PK)              |
+| patient_id (FK)      |
+| encounter_id (FK)    |
+| medication_id (FK)   |
+| intent               |
+| status               |
+| authored_on          |
+| identifier           |
+| validity_start       |
+| validity_end         |
+| dosage_text          |
+| route_code           |
+| frequency_code       |
+| dose_value           |
+| dose_unit            |
++----------------------+
+```
+
+### 10) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -321,4 +349,7 @@ organization  <-- location
                     +-- encounter_icu -- encounter_icu_location -- location
 
 medication  <--- medication_mix_ingredient ---> medication_mix
+      ^
+      |
+      +--- medication_request --- patient / encounter
 ```

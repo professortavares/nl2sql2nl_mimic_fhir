@@ -1,6 +1,7 @@
 """
 Definição do schema relacional enxuto para Organization, Location, Patient,
-Encounter, EncounterED, EncounterICU, Medication e MedicationMix.
+Encounter, EncounterED, EncounterICU, Medication, MedicationMix e
+MedicationRequest.
 """
 
 from __future__ import annotations
@@ -73,6 +74,13 @@ class MedicationMixTables:
 
 
 @dataclass(slots=True, frozen=True)
+class MedicationRequestTables:
+    """Referência à tabela de MedicationRequest."""
+
+    medication_request: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -84,6 +92,7 @@ class ProjectTables:
     encounter_icu: EncounterICUTables
     medication: MedicationTables
     medication_mix: MedicationMixTables
+    medication_request: MedicationRequestTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -132,6 +141,7 @@ def build_project_metadata(
     medication_table_name: str,
     medication_mix_table_name: str,
     medication_mix_ingredient_table_name: str,
+    medication_request_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -162,6 +172,8 @@ def build_project_metadata(
         Nome físico da tabela principal de MedicationMix.
     medication_mix_ingredient_table_name : str
         Nome físico da tabela auxiliar de ingredientes de MedicationMix.
+    medication_request_table_name : str
+        Nome físico da tabela de MedicationRequest.
 
     Retorno:
     -------
@@ -184,6 +196,7 @@ def build_project_metadata(
         medication_mix_ingredient_table_name,
         label="medication_mix_ingredient table",
     )
+    validate_identifier(medication_request_table_name, label="medication_request table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -416,6 +429,44 @@ def build_project_metadata(
         medication_mix_ingredient.c.medication_id,
     )
 
+    medication_request = Table(
+        medication_request_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "medication_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{medication_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("intent", String(50), nullable=True),
+        Column("status", String(50), nullable=True),
+        Column("authored_on", String(40), nullable=True),
+        Column("identifier", Text(), nullable=True),
+        Column("validity_start", String(40), nullable=True),
+        Column("validity_end", String(40), nullable=True),
+        Column("dosage_text", Text(), nullable=True),
+        Column("route_code", String(50), nullable=True),
+        Column("frequency_code", String(50), nullable=True),
+        Column("dose_value", String(50), nullable=True),
+        Column("dose_unit", String(50), nullable=True),
+    )
+    Index(f"ix_{medication_request_table_name}_patient_id", medication_request.c.patient_id)
+    Index(f"ix_{medication_request_table_name}_encounter_id", medication_request.c.encounter_id)
+    Index(f"ix_{medication_request_table_name}_medication_id", medication_request.c.medication_id)
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -434,4 +485,5 @@ def build_project_metadata(
             medication_mix=medication_mix,
             medication_mix_ingredient=medication_mix_ingredient,
         ),
+        medication_request=MedicationRequestTables(medication_request=medication_request),
     )
