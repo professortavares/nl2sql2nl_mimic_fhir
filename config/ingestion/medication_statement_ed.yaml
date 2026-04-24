@@ -1,0 +1,4 @@
+pipeline_name: ingest_medication_statement_ed
+input_path: data/MimicMedicationStatementED.ndjson.gz
+batch_size: 500
+table_name: medication_statement_ed

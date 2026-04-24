@@ -111,6 +111,7 @@ class ProjectSettings:
     medication_dispense_ed: ResourceIngestionSettings
     medication_administration: ResourceIngestionSettings
     medication_administration_icu: ResourceIngestionSettings
+    medication_statement_ed: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -322,6 +323,7 @@ def load_project_settings() -> ProjectSettings:
     medication_administration_icu_yaml = load_yaml_file(
         root / "config/ingestion/medication_administration_icu.yaml"
     )
+    medication_statement_ed_yaml = load_yaml_file(root / "config/ingestion/medication_statement_ed.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -519,6 +521,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/medication_administration_icu.yaml",
         root=root,
     )
+    medication_statement_ed = _load_resource_settings(
+        medication_statement_ed_yaml,
+        source=root / "config/ingestion/medication_statement_ed.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -553,6 +560,7 @@ def load_project_settings() -> ProjectSettings:
         medication_dispense_ed=medication_dispense_ed,
         medication_administration=medication_administration,
         medication_administration_icu=medication_administration_icu,
+        medication_statement_ed=medication_statement_ed,
     )
 
 

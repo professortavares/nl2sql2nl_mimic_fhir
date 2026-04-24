@@ -6,7 +6,8 @@ ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
 ObservationMicroOrg, ObservationMicroSusc, ObservationChartevents,
 ObservationDatetimeevents, ObservationOutputevents, ObservationED,
 ObservationVitalSignsED, MedicationDispense, MedicationDispenseED,
-MedicationAdministration e MedicationAdministrationICU.
+MedicationAdministration, MedicationAdministrationICU e
+MedicationStatementED.
 """
 
 from __future__ import annotations
@@ -221,6 +222,13 @@ class MedicationAdministrationICUTables:
 
 
 @dataclass(slots=True, frozen=True)
+class MedicationStatementEDTables:
+    """Referência à tabela de MedicationStatementED."""
+
+    medication_statement_ed: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -252,6 +260,7 @@ class ProjectTables:
     medication_dispense_ed: MedicationDispenseEDTables
     medication_administration: MedicationAdministrationTables
     medication_administration_icu: MedicationAdministrationICUTables
+    medication_statement_ed: MedicationStatementEDTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -322,6 +331,7 @@ def build_project_metadata(
     medication_dispense_ed_table_name: str,
     medication_administration_table_name: str,
     medication_administration_icu_table_name: str,
+    medication_statement_ed_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -396,6 +406,8 @@ def build_project_metadata(
         Nome físico da tabela de MedicationAdministration.
     medication_administration_icu_table_name : str
         Nome físico da tabela de MedicationAdministrationICU.
+    medication_statement_ed_table_name : str
+        Nome físico da tabela de MedicationStatementED.
 
     Retorno:
     -------
@@ -484,6 +496,10 @@ def build_project_metadata(
     validate_identifier(
         medication_administration_icu_table_name,
         label="medication_administration_icu table",
+    )
+    validate_identifier(
+        medication_statement_ed_table_name,
+        label="medication_statement_ed table",
     )
 
     metadata = MetaData(schema=schema_name)
@@ -1428,6 +1444,35 @@ def build_project_metadata(
         medication_administration_icu.c.encounter_id,
     )
 
+    medication_statement_ed = Table(
+        medication_statement_ed_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("date_asserted", String(40), nullable=True),
+        Column("medication_text", Text(), nullable=True),
+        Column("medication_code", String(100), nullable=True),
+        Column("medication_code_system", Text(), nullable=True),
+        Column("medication_code_display", Text(), nullable=True),
+    )
+    Index(f"ix_{medication_statement_ed_table_name}_patient_id", medication_statement_ed.c.patient_id)
+    Index(
+        f"ix_{medication_statement_ed_table_name}_encounter_id",
+        medication_statement_ed.c.encounter_id,
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -1487,5 +1532,8 @@ def build_project_metadata(
         ),
         medication_administration_icu=MedicationAdministrationICUTables(
             medication_administration_icu=medication_administration_icu
+        ),
+        medication_statement_ed=MedicationStatementEDTables(
+            medication_statement_ed=medication_statement_ed
         ),
     )
