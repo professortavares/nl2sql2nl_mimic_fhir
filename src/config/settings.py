@@ -97,6 +97,7 @@ class ProjectSettings:
     condition_ed: ResourceIngestionSettings
     procedure: ResourceIngestionSettings
     procedure_ed: ResourceIngestionSettings
+    procedure_icu: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -286,6 +287,7 @@ def load_project_settings() -> ProjectSettings:
     condition_ed_yaml = load_yaml_file(root / "config/ingestion/condition_ed.yaml")
     procedure_yaml = load_yaml_file(root / "config/ingestion/procedure.yaml")
     procedure_ed_yaml = load_yaml_file(root / "config/ingestion/procedure_ed.yaml")
+    procedure_icu_yaml = load_yaml_file(root / "config/ingestion/procedure_icu.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -413,6 +415,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/procedure_ed.yaml",
         root=root,
     )
+    procedure_icu = _load_resource_settings(
+        procedure_icu_yaml,
+        source=root / "config/ingestion/procedure_icu.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -433,6 +440,7 @@ def load_project_settings() -> ProjectSettings:
         condition_ed=condition_ed,
         procedure=procedure,
         procedure_ed=procedure_ed,
+        procedure_icu=procedure_icu,
     )
 
 

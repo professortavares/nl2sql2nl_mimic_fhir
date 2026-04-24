@@ -15,7 +15,7 @@ def main() -> int:
     """
     Executa a ingestão completa de Organization, Location, Patient, Encounter,
     EncounterED, EncounterICU, Medication, MedicationMix, MedicationRequest,
-    Specimen, Condition, ConditionED, Procedure e ProcedureED.
+    Specimen, Condition, ConditionED, Procedure, ProcedureED e ProcedureICU.
 
     Retorno:
     -------

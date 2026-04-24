@@ -13,3 +13,4 @@ execution_order:
   - condition_ed
   - procedure
   - procedure_ed
+  - procedure_icu
