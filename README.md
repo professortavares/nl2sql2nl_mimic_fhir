@@ -212,6 +212,11 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/observation_vital_signs_ed.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela principal
+  - nome da tabela auxiliar de components
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -268,6 +273,8 @@ python -m src.main
 - `observation_datetimeevents`
 - `observation_outputevents`
 - `observation_ed`
+- `observation_vital_signs_ed`
+- `observation_vital_signs_ed_component`
 
 ### Organização, Location e Patient
 
@@ -758,6 +765,41 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
 
 Se a referência de `Patient`, `Encounter` ou `Procedure` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
+### ObservationVitalSignsED
+
+`ObservationVitalSignsED` encerra a oitava fase com relacionamento para `Patient`, `Encounter`, `Procedure` e uma tabela auxiliar de `component`.
+
+- `observation_vital_signs_ed`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `procedure_id` `FK -> procedure.id` `nullable`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+- `observation_vital_signs_ed_component`
+  - `observation_vital_signs_ed_id` `FK -> observation_vital_signs_ed.id`
+  - `component_code`
+  - `component_code_system`
+  - `component_code_display`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+
+`component[*]` é usado para sinais vitais compostos, como pressão arterial, permitindo preservar os subvalores em linhas próprias.
+
+Se a referência de `Patient`, `Encounter` ou `Procedure` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -825,6 +867,10 @@ Os relacionamentos atualmente materializados são:
 - `observation_ed.patient_id -> patient.id`
 - `observation_ed.encounter_id -> encounter.id`
 - `observation_ed.procedure_id -> procedure.id`
+- `observation_vital_signs_ed.patient_id -> patient.id`
+- `observation_vital_signs_ed.encounter_id -> encounter.id`
+- `observation_vital_signs_ed.procedure_id -> procedure.id`
+- `observation_vital_signs_ed_component.observation_vital_signs_ed_id -> observation_vital_signs_ed.id`
 
 ## Logging
 

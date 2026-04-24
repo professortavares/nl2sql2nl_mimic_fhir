@@ -32,6 +32,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_datetimeevents`
 - `observation_outputevents`
 - `observation_ed`
+- `observation_vital_signs_ed`
+- `observation_vital_signs_ed_component`
 
 ## Foreign Keys
 
@@ -83,6 +85,10 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_ed.patient_id -> patient.id`
 - `observation_ed.encounter_id -> encounter.id`
 - `observation_ed.procedure_id -> procedure.id`
+- `observation_vital_signs_ed.patient_id -> patient.id`
+- `observation_vital_signs_ed.encounter_id -> encounter.id`
+- `observation_vital_signs_ed.procedure_id -> procedure.id`
+- `observation_vital_signs_ed_component.observation_vital_signs_ed_id -> observation_vital_signs_ed.id`
 
 ## Diagramas Segmentados
 
@@ -871,7 +877,70 @@ medication
 +----------------+
 ```
 
-### 24) Visão Consolidada
+### 24) observationVitalSignsED com patient, encounter, procedure e components
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_vital_signs_ed.patient_id
+        |
++--------------------------------+
+| observation_vital_signs_ed     |
+|--------------------------------|
+| id (PK)                        |
+| patient_id                     |
+| encounter_id                   |
+| procedure_id                   |
+| observation_code               |
+| effective_at                   |
+| value                          |
+| value_unit                     |
++--------------------------------+
+        |              |
+        |              | observation_vital_signs_ed.procedure_id
+        |              v
+        |       +----------------+
+        |       |   procedure    |
+        |       |----------------|
+        |       | id (PK)        |
+        |       +----------------+
+        |
+        | observation_vital_signs_ed.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+
++--------------------------------+
+| observation_vital_signs_ed     |
+|--------------------------------|
+| id (PK)                        |
++--------------------------------+
+        |
+        | observation_vital_signs_ed_component.observation_vital_signs_ed_id
+        v
++----------------------------------------+
+| observation_vital_signs_ed_component   |
+|----------------------------------------|
+| observation_vital_signs_ed_id          |
+| component_code                         |
+| component_code_system                  |
+| component_code_display                 |
+| value                                  |
+| value_unit                             |
+| value_code                             |
+| value_system                           |
++----------------------------------------+
+```
+
+### 25) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -918,6 +987,10 @@ patient --- observation_datetimeevents --- encounter
 patient --- observation_outputevents --- encounter
 
 patient --- observation_ed --- procedure / encounter
+
+patient --- observation_vital_signs_ed --- procedure / encounter
+
+observation_vital_signs_ed --- observation_vital_signs_ed_component
 
 observation_micro_org --- observation_micro_org_has_member
 ```
