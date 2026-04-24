@@ -52,6 +52,11 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 21. `MimicObservationDatetimeevents.ndjson.gz`
 22. `MimicObservationOutputevents.ndjson.gz`
 23. `MimicObservationED.ndjson.gz`
+24. `MimicObservationVitalSignsED.ndjson.gz`
+
+### Fase 9
+
+25. `MimicMedicationDispense.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -80,6 +85,8 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 23. ingestão de `ObservationDatetimeevents`
 24. ingestão de `ObservationOutputevents`
 25. ingestão de `ObservationED`
+26. ingestão de `ObservationVitalSignsED`
+27. ingestão de `MedicationDispense`
 
 ## Pré-requisitos
 
@@ -217,6 +224,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - batch size
   - nome da tabela principal
   - nome da tabela auxiliar de components
+- `config/ingestion/medication_dispense.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -275,6 +286,7 @@ python -m src.main
 - `observation_ed`
 - `observation_vital_signs_ed`
 - `observation_vital_signs_ed_component`
+- `medication_dispense`
 
 ### Organização, Location e Patient
 
@@ -401,6 +413,25 @@ o valor é normalizado para `NULL` e o evento é registrado em log para evitar q
   - `dose_value`
   - `dose_unit`
 
+### MedicationDispense
+
+`MedicationDispense` encerra a nona e última fase com relacionamento para `Patient`, `Encounter` e `MedicationRequest`.
+Não é criada FK para `Medication`, porque o arquivo usa `medicationCodeableConcept`, não `medicationReference`.
+
+- `medication_dispense`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `medication_request_id` `FK -> medication_request.id` `nullable`
+  - `status`
+  - `identifier`
+  - `medication_code`
+  - `medication_code_system`
+  - `route_code`
+  - `frequency_code`
+
+Se a referência de `Patient`, `Encounter` ou `MedicationRequest` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
 ### Estratégia de Consolidação
 
 Quando um recurso contém listas FHIR, a ingestão usa sempre o **primeiro valor não vazio e válido encontrado**.
@@ -423,6 +454,8 @@ Isso vale, por exemplo, para:
 - `dosageInstruction[*].timing.code.coding[*].code`
 - `dosageInstruction[*].doseAndRate[*].doseQuantity.value`
 - `dosageInstruction[*].doseAndRate[*].doseQuantity.unit`
+- `medicationCodeableConcept.coding[*].code`
+- `medicationCodeableConcept.coding[*].system`
 - `type.coding[*].code`
 - `type.coding[*].system`
 - `type.coding[*].display`
@@ -468,6 +501,8 @@ Em `ObservationDatetimeevents`, o código, a categoria e o valor temporal seguem
 Em `ObservationOutputevents`, o código, a categoria e o valor numérico seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 Em `ObservationED`, o código, a categoria, o valor textual e o motivo de ausência seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
+Em `MedicationDispense`, `identifier`, `route`, `frequency` e `medicationCodeableConcept` seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 ### Condition
 
@@ -910,7 +945,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents`, `ObservationDatetimeevents`, `ObservationOutputevents` e `ObservationED`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents`, `ObservationDatetimeevents`, `ObservationOutputevents`, `ObservationED`, `ObservationVitalSignsED` e `MedicationDispense`
 
 ## Documentação Relacional
 

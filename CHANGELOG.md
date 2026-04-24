@@ -4,6 +4,39 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.26.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicMedicationDispense.ndjson.gz` como início da nona e última fase de ingestão.
+- Nova tabela principal `medication_dispense` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `medication_request_id`
+  - `status`
+  - `identifier`
+  - `medication_code`
+  - `medication_code_system`
+  - `route_code`
+  - `frequency_code`
+- Transformer, loader e pipeline dedicados para `MedicationDispense`.
+- Testes de unidade para o transformer de `MedicationDispense`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `MedicationDispense` ao final.
+- Reestruturação do schema para incluir a tabela `medication_dispense` e suas FKs para `patient`, `encounter` e `medication_request`.
+- Atualização do `README.md` com a nona e última fase, a modelagem simplificada e a observação de que não há FK para `Medication`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `MedicationDispense`.
+- Atualização da configuração YAML para incluir `config/ingestion/medication_dispense.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `identifier[*]`, `medicationCodeableConcept.coding[*]`, `dosageInstruction[*].route.coding[*]` e `dosageInstruction[*].timing.code.coding[*]` para `MedicationDispense`.
+- Consolidação explícita de `subject.reference`, `context.reference` e `authorizingPrescription[*].reference` com os tipos esperados `Patient`, `Encounter` e `MedicationRequest` para `MedicationDispense`.
+- Normalização de `medication_dispense.patient_id`, `medication_dispense.encounter_id` e `medication_dispense.medication_request_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.25.0] - 2026-04-24
 
 ### Adicionado

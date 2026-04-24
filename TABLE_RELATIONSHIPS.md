@@ -34,6 +34,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_ed`
 - `observation_vital_signs_ed`
 - `observation_vital_signs_ed_component`
+- `medication_dispense`
 
 ## Foreign Keys
 
@@ -89,6 +90,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_vital_signs_ed.encounter_id -> encounter.id`
 - `observation_vital_signs_ed.procedure_id -> procedure.id`
 - `observation_vital_signs_ed_component.observation_vital_signs_ed_id -> observation_vital_signs_ed.id`
+- `medication_dispense.patient_id -> patient.id`
+- `medication_dispense.encounter_id -> encounter.id`
+- `medication_dispense.medication_request_id -> medication_request.id`
 
 ## Diagramas Segmentados
 
@@ -384,7 +388,44 @@ medication
 +----------------------+
 ```
 
-### 10) Specimen e Patient
+### 10) MedicationDispense com patient, encounter e medicationRequest
+
+```text
++----------------+
+|    patient     |
++----------------+
+        ^
+        |
+        | medication_dispense.patient_id
+        |
++--------------------------+
+| medication_dispense      |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| encounter_id             |
+| medication_request_id    |
+| medication_code          |
+| route_code               |
+| frequency_code           |
++--------------------------+
+        |              |
+        |              | medication_dispense.medication_request_id
+        |              v
+        |       +--------------------+
+        |       | medication_request  |
+        |       +--------------------+
+        |
+        | medication_dispense.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 11) Specimen e Patient
 
 ```text
 +----------------------+
@@ -991,6 +1032,8 @@ patient --- observation_ed --- procedure / encounter
 patient --- observation_vital_signs_ed --- procedure / encounter
 
 observation_vital_signs_ed --- observation_vital_signs_ed_component
+
+patient --- medication_dispense --- medication_request / encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```
