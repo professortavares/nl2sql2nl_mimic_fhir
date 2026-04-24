@@ -23,3 +23,4 @@ execution_order:
   - observation_outputevents
   - observation_ed
   - observation_vital_signs_ed
+  - medication_dispense
