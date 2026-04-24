@@ -20,3 +20,4 @@ execution_order:
   - observation_micro_susc
   - observation_chartevents
   - observation_datetimeevents
+  - observation_outputevents
