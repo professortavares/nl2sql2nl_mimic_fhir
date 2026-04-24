@@ -37,6 +37,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_dispense`
 - `medication_dispense_ed`
 - `medication_administration`
+- `medication_administration_icu`
 
 ## Foreign Keys
 
@@ -100,6 +101,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_administration.patient_id -> patient.id`
 - `medication_administration.encounter_id -> encounter.id`
 - `medication_administration.medication_request_id -> medication_request.id`
+- `medication_administration_icu.patient_id -> patient.id`
+- `medication_administration_icu.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -496,6 +499,41 @@ medication
         |       +--------------------+
         |
         | medication_administration.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 13) MedicationAdministrationICU com patient e encounter
+
+```text
++----------------+
+|    patient     |
++----------------+
+        ^
+        |
+        | medication_administration_icu.patient_id
+        |
++---------------------------------+
+| medication_administration_icu   |
+|---------------------------------|
+| id (PK)                         |
+| patient_id                      |
+| encounter_id                    |
+| status                          |
+| effective_at                    |
+| category_code                   |
+| medication_code                 |
+| medication_code_display         |
+| dose_value                      |
+| dose_unit                       |
+| method_code                     |
++---------------------------------+
+        |
+        | medication_administration_icu.encounter_id
         v
 +----------------+
 |   encounter    |
@@ -1117,6 +1155,8 @@ patient --- medication_dispense --- medication_request / encounter
 patient --- medication_dispense_ed --- encounter
 
 patient --- medication_administration --- medication_request / encounter
+
+patient --- medication_administration_icu --- encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```

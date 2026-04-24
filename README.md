@@ -59,6 +59,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 25. `MimicMedicationDispense.ndjson.gz`
 26. `MimicMedicationDispenseED.ndjson.gz`
 27. `MimicMedicationAdministration.ndjson.gz`
+28. `MimicMedicationAdministrationICU.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -91,6 +92,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 27. ingestão de `MedicationDispense`
 28. ingestão de `MedicationDispenseED`
 29. ingestão de `MedicationAdministration`
+30. ingestão de `MedicationAdministrationICU`
 
 ## Pré-requisitos
 
@@ -240,6 +242,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/medication_administration_icu.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -301,6 +307,7 @@ python -m src.main
 - `medication_dispense`
 - `medication_dispense_ed`
 - `medication_administration`
+- `medication_administration_icu`
 
 ### Organização, Location e Patient
 
@@ -466,7 +473,7 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
 
 ### MedicationAdministration
 
-`MedicationAdministration` encerra a nona e última fase com relacionamento para `Patient`, `Encounter` e `MedicationRequest`.
+`MedicationAdministration` continua a nona fase com relacionamento para `Patient`, `Encounter` e `MedicationRequest`.
 Não é criada FK para `Medication`, porque o arquivo usa `medicationCodeableConcept`, não `medicationReference`.
 
 - `medication_administration`
@@ -487,6 +494,31 @@ Não é criada FK para `Medication`, porque o arquivo usa `medicationCodeableCon
   - `method_system`
 
 Se a referência de `Patient`, `Encounter` ou `MedicationRequest` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
+### MedicationAdministrationICU
+
+`MedicationAdministrationICU` encerra a nona fase com relacionamento para `Patient` e `Encounter`.
+Não é criada FK para `MedicationRequest` nem para `Medication`, porque o arquivo não possui `request.reference` e usa `medicationCodeableConcept`, não `medicationReference`.
+
+- `medication_administration_icu`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `effective_at`
+  - `category_code`
+  - `category_system`
+  - `medication_code`
+  - `medication_code_system`
+  - `medication_code_display`
+  - `dose_value`
+  - `dose_unit`
+  - `dose_code`
+  - `dose_system`
+  - `method_code`
+  - `method_system`
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
 ### Estratégia de Consolidação
 
@@ -563,6 +595,8 @@ Em `MedicationDispense`, `identifier`, `route`, `frequency` e `medicationCodeabl
 Em `MedicationDispenseED`, `whenHandedOver` e `medicationCodeableConcept` seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 Em `MedicationAdministration`, `effectiveDateTime`, `medicationCodeableConcept`, `dosage.text`, `dosage.dose` e `dosage.method` seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
+Em `MedicationAdministrationICU`, `effectiveDateTime`, `category`, `medicationCodeableConcept` e `dosage` seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 ### Condition
 
@@ -1005,7 +1039,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents`, `ObservationDatetimeevents`, `ObservationOutputevents`, `ObservationED`, `ObservationVitalSignsED`, `MedicationDispense`, `MedicationDispenseED` e `MedicationAdministration`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents`, `ObservationDatetimeevents`, `ObservationOutputevents`, `ObservationED`, `ObservationVitalSignsED`, `MedicationDispense`, `MedicationDispenseED`, `MedicationAdministration` e `MedicationAdministrationICU`
 
 ## Documentação Relacional
 
