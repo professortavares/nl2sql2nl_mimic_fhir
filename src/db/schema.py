@@ -2,7 +2,8 @@
 Definição do schema relacional enxuto para Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
-ProcedureED, ProcedureICU, ObservationLabevents e ObservationMicroTest.
+ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest e
+ObservationMicroOrg.
 """
 
 from __future__ import annotations
@@ -138,6 +139,14 @@ class ObservationMicroTestTables:
 
 
 @dataclass(slots=True, frozen=True)
+class ObservationMicroOrgTables:
+    """Referência às tabelas de ObservationMicroOrg."""
+
+    observation_micro_org: Table
+    observation_micro_org_has_member: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -158,6 +167,7 @@ class ProjectTables:
     procedure_icu: ProcedureICUTables
     observation_labevents: ObservationLabeventsTables
     observation_micro_test: ObservationMicroTestTables
+    observation_micro_org: ObservationMicroOrgTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -215,6 +225,8 @@ def build_project_metadata(
     procedure_icu_table_name: str,
     observation_labevents_table_name: str,
     observation_micro_test_table_name: str,
+    observation_micro_org_table_name: str,
+    observation_micro_org_has_member_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -263,8 +275,10 @@ def build_project_metadata(
         Nome físico da tabela de ObservationLabevents.
     observation_micro_test_table_name : str
         Nome físico da tabela de ObservationMicroTest.
-    observation_micro_test_table_name : str
-        Nome físico da tabela de ObservationMicroTest.
+    observation_micro_org_table_name : str
+        Nome físico da tabela de ObservationMicroOrg.
+    observation_micro_org_has_member_table_name : str
+        Nome físico da tabela auxiliar de members de ObservationMicroOrg.
 
     Retorno:
     -------
@@ -303,8 +317,12 @@ def build_project_metadata(
         label="observation_micro_test table",
     )
     validate_identifier(
-        observation_micro_test_table_name,
-        label="observation_micro_test table",
+        observation_micro_org_table_name,
+        label="observation_micro_org table",
+    )
+    validate_identifier(
+        observation_micro_org_has_member_table_name,
+        label="observation_micro_org_has_member table",
     )
 
     metadata = MetaData(schema=schema_name)
@@ -803,6 +821,58 @@ def build_project_metadata(
     Index(f"ix_{observation_micro_test_table_name}_specimen_id", observation_micro_test.c.specimen_id)
     Index(f"ix_{observation_micro_test_table_name}_encounter_id", observation_micro_test.c.encounter_id)
 
+    observation_micro_org = Table(
+        observation_micro_org_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "derived_from_observation_micro_test_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{observation_micro_test_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("organism_code", String(100), nullable=True),
+        Column("organism_code_system", Text(), nullable=True),
+        Column("organism_code_display", Text(), nullable=True),
+        Column("category_code", String(100), nullable=True),
+        Column("category_system", Text(), nullable=True),
+        Column("category_display", Text(), nullable=True),
+        Column("effective_at", String(40), nullable=True),
+        Column("value_string", Text(), nullable=True),
+    )
+    Index(f"ix_{observation_micro_org_table_name}_patient_id", observation_micro_org.c.patient_id)
+    Index(
+        f"ix_{observation_micro_org_table_name}_derived_from_observation_micro_test_id",
+        observation_micro_org.c.derived_from_observation_micro_test_id,
+    )
+
+    observation_micro_org_has_member = Table(
+        observation_micro_org_has_member_table_name,
+        metadata,
+        Column(
+            "observation_micro_org_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{observation_micro_org_table_name}.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        Column("member_observation_id", String(_FHIR_ID_MAX_LENGTH), nullable=False),
+    )
+    Index(
+        f"ix_{observation_micro_org_has_member_table_name}_observation_micro_org_id",
+        observation_micro_org_has_member.c.observation_micro_org_id,
+    )
+    Index(
+        f"ix_{observation_micro_org_has_member_table_name}_member_observation_id",
+        observation_micro_org_has_member.c.member_observation_id,
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -833,5 +903,9 @@ def build_project_metadata(
         ),
         observation_micro_test=ObservationMicroTestTables(
             observation_micro_test=observation_micro_test
+        ),
+        observation_micro_org=ObservationMicroOrgTables(
+            observation_micro_org=observation_micro_org,
+            observation_micro_org_has_member=observation_micro_org_has_member,
         ),
     )

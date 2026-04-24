@@ -1,0 +1,5 @@
+pipeline_name: ingest_observation_micro_org
+input_path: data/MimicObservationMicroOrg.ndjson.gz
+batch_size: 500
+table_name: observation_micro_org
+auxiliary_table_name: observation_micro_org_has_member

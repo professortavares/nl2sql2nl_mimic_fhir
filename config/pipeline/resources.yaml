@@ -16,3 +16,4 @@ execution_order:
   - procedure_icu
   - observation_labevents
   - observation_micro_test
+  - observation_micro_org
