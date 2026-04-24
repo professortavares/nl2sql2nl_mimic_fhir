@@ -37,6 +37,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 
 13. `MimicProcedure.ndjson.gz`
 14. `MimicProcedureED.ndjson.gz`
+15. `MimicProcedureICU.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -56,6 +57,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 14. ingestão de `ConditionED`
 15. ingestão de `Procedure`
 16. ingestão de `ProcedureED`
+17. ingestão de `ProcedureICU`
 
 ## Pré-requisitos
 
@@ -151,6 +153,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/procedure_icu.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -197,6 +203,7 @@ python -m src.main
 - `condition_ed`
 - `procedure`
 - `procedure_ed`
+- `procedure_icu`
 
 ### Organização, Location e Patient
 
@@ -373,6 +380,8 @@ Em `Procedure`, o código do procedimento segue a mesma regra de consolidação 
 
 Em `ProcedureED`, o código do procedimento segue a mesma regra de consolidação por primeiro valor útil encontrado.
 
+Em `ProcedureICU`, o código do procedimento e a categoria seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
 ### Condition
 
 `Condition` entra nesta fase com relacionamento para `Patient` e `Encounter`.
@@ -439,6 +448,27 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
 
 Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
+### ProcedureICU
+
+`ProcedureICU` entra nesta fase com relacionamento para `Patient` e `Encounter`.
+
+- `procedure_icu`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `procedure_code`
+  - `procedure_code_system`
+  - `procedure_code_display`
+  - `category_code`
+  - `category_system`
+  - `performed_start`
+  - `performed_end`
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
+`ProcedureICU` usa `performedPeriod.start` e `performedPeriod.end`, enquanto `Procedure` e `ProcedureED` usam `performedDateTime`. A modelagem guarda os dois limites do período para manter a janela temporal observada no recurso ICU.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -485,6 +515,8 @@ Os relacionamentos atualmente materializados são:
 - `procedure.encounter_id -> encounter.id`
 - `procedure_ed.patient_id -> patient.id`
 - `procedure_ed.encounter_id -> encounter.id`
+- `procedure_icu.patient_id -> patient.id`
+- `procedure_icu.encounter_id -> encounter.id`
 
 ## Logging
 
@@ -524,7 +556,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure` e `ProcedureED`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED` e `ProcedureICU`
 
 ## Documentação Relacional
 

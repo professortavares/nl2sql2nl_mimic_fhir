@@ -22,6 +22,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `condition_ed`
 - `procedure`
 - `procedure_ed`
+- `procedure_icu`
 
 ## Foreign Keys
 
@@ -52,6 +53,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `procedure.encounter_id -> encounter.id`
 - `procedure_ed.patient_id -> patient.id`
 - `procedure_ed.encounter_id -> encounter.id`
+- `procedure_icu.patient_id -> patient.id`
+- `procedure_icu.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -504,7 +507,39 @@ medication
 +----------------+
 ```
 
-### 15) Visão Consolidada
+### 15) procedureICU com Patient e Encounter
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | procedure_icu.patient_id
+        |
++----------------+
+| procedure_icu  |
+|----------------|
+| id (PK)        |
+| patient_id     |
+| encounter_id   |
+| procedure_code |
+| performed_start|
+| performed_end  |
++----------------+
+        |
+        | procedure_icu.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 16) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -533,4 +568,6 @@ patient --- condition_ed --- encounter
 patient --- procedure --- encounter
 
 patient --- procedure_ed --- encounter
+
+patient --- procedure_icu --- encounter
 ```

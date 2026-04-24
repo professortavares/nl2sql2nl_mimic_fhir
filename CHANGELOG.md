@@ -4,6 +4,40 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.16.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicProcedureICU.ndjson.gz` como continuação da sexta fase de ingestão.
+- Nova tabela principal `procedure_icu` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `procedure_code`
+  - `procedure_code_system`
+  - `procedure_code_display`
+  - `category_code`
+  - `category_system`
+  - `performed_start`
+  - `performed_end`
+- Transformer, loader e pipeline dedicados para `ProcedureICU`.
+- Testes de unidade para o transformer de `ProcedureICU`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ProcedureICU` ao final.
+- Reestruturação do schema para incluir a tabela `procedure_icu` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova fase, a diferença entre `performedDateTime` e `performedPeriod` e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ProcedureICU`.
+- Atualização da configuração YAML para incluir `config/ingestion/procedure_icu.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]` e `category.coding[*]` para `ProcedureICU`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter` para `ProcedureICU`.
+- Normalização de `procedure_icu.patient_id` e `procedure_icu.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.15.0] - 2026-04-24
 
 ### Adicionado
