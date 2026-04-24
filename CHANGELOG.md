@@ -53,6 +53,7 @@ semântico `X.Y.Z`.
 
 - Consolidação explícita do primeiro valor não vazio e válido encontrado em `identifier[*]`, `dosageInstruction[*]`, `route.coding[*]`, `timing.code.coding[*]` e `doseAndRate[*]`.
 - Consolidação explícita de referências FHIR em `subject.reference`, `encounter.reference` e `medicationReference.reference` com os tipos esperados.
+- Normalização de `medication_request.medication_id` para `NULL` quando a referência aponta para um `Medication` inexistente no conjunto já carregado, preservando a ingestão e registrando o evento em log.
 - Preservação da decisão arquitetural de manter a ingestão enxuta e sem tabelas auxiliares desnecessárias para `MedicationRequest`.
 - Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
 

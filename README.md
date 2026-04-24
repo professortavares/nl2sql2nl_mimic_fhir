@@ -258,6 +258,9 @@ Não foram observadas referências FHIR diretas confiáveis para `Patient`, `Enc
 ### MedicationRequest
 
 `MedicationRequest` se relaciona com `Patient`, `Encounter` e `Medication`.
+Quando uma referência a `Medication` não encontra correspondência na tabela já carregada,
+o valor é normalizado para `NULL` e o evento é registrado em log para evitar que um
+único vínculo órfão interrompa toda a ingestão.
 
 - `medication_request`
   - `id` `PK`

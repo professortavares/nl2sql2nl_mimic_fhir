@@ -87,7 +87,10 @@ class IngestAllPipeline:
         self._encounter_icu_loader = EncounterICULoader(tables.encounter_icu)
         self._medication_loader = MedicationLoader(tables.medication)
         self._medication_mix_loader = MedicationMixLoader(tables.medication_mix)
-        self._medication_request_loader = MedicationRequestLoader(tables.medication_request)
+        self._medication_request_loader = MedicationRequestLoader(
+            tables=tables.medication_request,
+            medication_tables=tables.medication,
+        )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
                 settings=settings,
