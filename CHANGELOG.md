@@ -4,6 +4,53 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.17.0] - 2026-04-24
+
+### Adicionado
+
+- Início da sétima fase de ingestão com suporte ao arquivo `data/MimicObservationLabevents.ndjson.gz`.
+- Nova tabela principal `observation_labevents` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `specimen_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `issued_at`
+  - `identifier`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+  - `reference_low_value`
+  - `reference_low_unit`
+  - `reference_high_value`
+  - `reference_high_unit`
+  - `lab_priority`
+  - `note`
+- Transformer, loader e pipeline dedicados para `ObservationLabevents`.
+- Testes de unidade para o transformer de `ObservationLabevents`.
+- Atualização do parser de referências FHIR com suporte explícito a `Specimen/<id>` nos testes.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationLabevents` ao final.
+- Reestruturação do schema para incluir a tabela `observation_labevents` e suas FKs para `patient` e `specimen`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada, a ausência de vínculo com `encounter` e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationLabevents`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_labevents.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]`, `identifier[*].value`, `referenceRange[*]`, `extension[*]` e `note[*].text` para `ObservationLabevents`.
+- Consolidação explícita de `subject.reference` e `specimen.reference` com os tipos esperados `Patient` e `Specimen` para `ObservationLabevents`.
+- Normalização de `observation_labevents.patient_id` e `observation_labevents.specimen_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.16.0] - 2026-04-24
 
 ### Adicionado

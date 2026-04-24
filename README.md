@@ -39,6 +39,10 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 14. `MimicProcedureED.ndjson.gz`
 15. `MimicProcedureICU.ndjson.gz`
 
+### Fase 7
+
+16. `MimicObservationLabevents.ndjson.gz`
+
 ### Ordem obrigatória da pipeline
 
 1. reset completo do schema
@@ -58,6 +62,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 15. ingestão de `Procedure`
 16. ingestão de `ProcedureED`
 17. ingestão de `ProcedureICU`
+18. ingestão de `ObservationLabevents`
 
 ## Pré-requisitos
 
@@ -157,6 +162,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/observation_labevents.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -204,6 +213,7 @@ python -m src.main
 - `procedure`
 - `procedure_ed`
 - `procedure_icu`
+- `observation_labevents`
 
 ### Organização, Location e Patient
 
@@ -382,6 +392,8 @@ Em `ProcedureED`, o código do procedimento segue a mesma regra de consolidaçã
 
 Em `ProcedureICU`, o código do procedimento e a categoria seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
+Em `ObservationLabevents`, o código, a categoria, o identificador, o valor, os limites de referência, a prioridade laboratorial e a nota seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
 ### Condition
 
 `Condition` entra nesta fase com relacionamento para `Patient` e `Encounter`.
@@ -469,6 +481,39 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
 
 `ProcedureICU` usa `performedPeriod.start` e `performedPeriod.end`, enquanto `Procedure` e `ProcedureED` usam `performedDateTime`. A modelagem guarda os dois limites do período para manter a janela temporal observada no recurso ICU.
 
+### ObservationLabevents
+
+`ObservationLabevents` entra nesta fase com relacionamento para `Patient` e `Specimen`.
+
+- `observation_labevents`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `specimen_id` `FK -> specimen.id` `nullable`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `issued_at`
+  - `identifier`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+  - `reference_low_value`
+  - `reference_low_unit`
+  - `reference_high_value`
+  - `reference_high_unit`
+  - `lab_priority`
+  - `note`
+
+Se a referência de `Patient` ou `Specimen` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
+`encounter` não é usado aqui porque o arquivo não expõe uma referência explícita para esse vínculo.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -517,6 +562,8 @@ Os relacionamentos atualmente materializados são:
 - `procedure_ed.encounter_id -> encounter.id`
 - `procedure_icu.patient_id -> patient.id`
 - `procedure_icu.encounter_id -> encounter.id`
+- `observation_labevents.patient_id -> patient.id`
+- `observation_labevents.specimen_id -> specimen.id`
 
 ## Logging
 
@@ -556,7 +603,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED` e `ProcedureICU`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU` e `ObservationLabevents`
 
 ## Documentação Relacional
 
