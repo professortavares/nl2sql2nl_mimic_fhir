@@ -4,6 +4,45 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.18.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationMicroTest.ndjson.gz` como continuação da sétima fase de ingestão.
+- Nova tabela principal `observation_micro_test` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `specimen_id`
+  - `encounter_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `value_string`
+  - `value_code`
+  - `value_code_system`
+  - `value_code_display`
+- Transformer, loader e pipeline dedicados para `ObservationMicroTest`.
+- Testes de unidade para o transformer de `ObservationMicroTest`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationMicroTest` ao final.
+- Reestruturação do schema para incluir a tabela `observation_micro_test` e suas FKs para `patient`, `specimen` e `encounter`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada, a observação de que `encounter` é opcional e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationMicroTest`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_micro_test.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]` e `valueCodeableConcept.coding[*]` para `ObservationMicroTest`.
+- Consolidação explícita de `subject.reference`, `specimen.reference` e `encounter.reference` com os tipos esperados `Patient`, `Specimen` e `Encounter` para `ObservationMicroTest`.
+- Normalização de `observation_micro_test.patient_id`, `observation_micro_test.specimen_id` e `observation_micro_test.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.17.0] - 2026-04-24
 
 ### Adicionado

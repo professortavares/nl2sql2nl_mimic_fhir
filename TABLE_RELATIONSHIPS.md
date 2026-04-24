@@ -24,6 +24,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `procedure_ed`
 - `procedure_icu`
 - `observation_labevents`
+- `observation_micro_test`
 
 ## Foreign Keys
 
@@ -58,6 +59,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `procedure_icu.encounter_id -> encounter.id`
 - `observation_labevents.patient_id -> patient.id`
 - `observation_labevents.specimen_id -> specimen.id`
+- `observation_micro_test.patient_id -> patient.id`
+- `observation_micro_test.specimen_id -> specimen.id`
+- `observation_micro_test.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -576,7 +580,50 @@ medication
 +----------------+
 ```
 
-### 17) Visão Consolidada
+### 17) observationMicroTest com patient, specimen e encounter
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_micro_test.patient_id
+        |
++--------------------------+
+| observation_micro_test   |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| specimen_id              |
+| encounter_id             |
+| observation_code         |
+| effective_at             |
+| value_string             |
+| value_code               |
++--------------------------+
+        |              |
+        |              | observation_micro_test.encounter_id
+        |              v
+        |       +----------------+
+        |       |   encounter    |
+        |       |----------------|
+        |       | id (PK)        |
+        |       +----------------+
+        |
+        | observation_micro_test.specimen_id
+        v
++----------------+
+|    specimen    |
+|----------------|
+| id (PK)        |
+| patient_id     |
++----------------+
+```
+
+### 18) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -609,4 +656,6 @@ patient --- procedure_ed --- encounter
 patient --- procedure_icu --- encounter
 
 patient --- observation_labevents --- specimen
+
+patient --- observation_micro_test --- specimen / encounter
 ```
