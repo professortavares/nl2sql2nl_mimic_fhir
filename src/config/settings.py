@@ -99,6 +99,7 @@ class ProjectSettings:
     procedure_ed: ResourceIngestionSettings
     procedure_icu: ResourceIngestionSettings
     observation_labevents: ResourceIngestionSettings
+    observation_micro_test: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -290,6 +291,7 @@ def load_project_settings() -> ProjectSettings:
     procedure_ed_yaml = load_yaml_file(root / "config/ingestion/procedure_ed.yaml")
     procedure_icu_yaml = load_yaml_file(root / "config/ingestion/procedure_icu.yaml")
     observation_labevents_yaml = load_yaml_file(root / "config/ingestion/observation_labevents.yaml")
+    observation_micro_test_yaml = load_yaml_file(root / "config/ingestion/observation_micro_test.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -427,6 +429,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/observation_labevents.yaml",
         root=root,
     )
+    observation_micro_test = _load_resource_settings(
+        observation_micro_test_yaml,
+        source=root / "config/ingestion/observation_micro_test.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -449,6 +456,7 @@ def load_project_settings() -> ProjectSettings:
         procedure_ed=procedure_ed,
         procedure_icu=procedure_icu,
         observation_labevents=observation_labevents,
+        observation_micro_test=observation_micro_test,
     )
 
 

@@ -2,7 +2,7 @@
 Definição do schema relacional enxuto para Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
-ProcedureED, ProcedureICU e ObservationLabevents.
+ProcedureED, ProcedureICU, ObservationLabevents e ObservationMicroTest.
 """
 
 from __future__ import annotations
@@ -131,6 +131,13 @@ class ObservationLabeventsTables:
 
 
 @dataclass(slots=True, frozen=True)
+class ObservationMicroTestTables:
+    """Referência à tabela de ObservationMicroTest."""
+
+    observation_micro_test: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -150,6 +157,7 @@ class ProjectTables:
     procedure_ed: ProcedureEDTables
     procedure_icu: ProcedureICUTables
     observation_labevents: ObservationLabeventsTables
+    observation_micro_test: ObservationMicroTestTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -206,6 +214,7 @@ def build_project_metadata(
     procedure_ed_table_name: str,
     procedure_icu_table_name: str,
     observation_labevents_table_name: str,
+    observation_micro_test_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -252,6 +261,10 @@ def build_project_metadata(
         Nome físico da tabela de ProcedureICU.
     observation_labevents_table_name : str
         Nome físico da tabela de ObservationLabevents.
+    observation_micro_test_table_name : str
+        Nome físico da tabela de ObservationMicroTest.
+    observation_micro_test_table_name : str
+        Nome físico da tabela de ObservationMicroTest.
 
     Retorno:
     -------
@@ -284,6 +297,14 @@ def build_project_metadata(
     validate_identifier(
         observation_labevents_table_name,
         label="observation_labevents table",
+    )
+    validate_identifier(
+        observation_micro_test_table_name,
+        label="observation_micro_test table",
+    )
+    validate_identifier(
+        observation_micro_test_table_name,
+        label="observation_micro_test table",
     )
 
     metadata = MetaData(schema=schema_name)
@@ -743,6 +764,45 @@ def build_project_metadata(
     Index(f"ix_{observation_labevents_table_name}_patient_id", observation_labevents.c.patient_id)
     Index(f"ix_{observation_labevents_table_name}_specimen_id", observation_labevents.c.specimen_id)
 
+    observation_micro_test = Table(
+        observation_micro_test_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "specimen_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{specimen_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("observation_code", String(100), nullable=True),
+        Column("observation_code_system", Text(), nullable=True),
+        Column("observation_code_display", Text(), nullable=True),
+        Column("category_code", String(100), nullable=True),
+        Column("category_system", Text(), nullable=True),
+        Column("category_display", Text(), nullable=True),
+        Column("effective_at", String(40), nullable=True),
+        Column("value_string", Text(), nullable=True),
+        Column("value_code", String(100), nullable=True),
+        Column("value_code_system", Text(), nullable=True),
+        Column("value_code_display", Text(), nullable=True),
+    )
+    Index(f"ix_{observation_micro_test_table_name}_patient_id", observation_micro_test.c.patient_id)
+    Index(f"ix_{observation_micro_test_table_name}_specimen_id", observation_micro_test.c.specimen_id)
+    Index(f"ix_{observation_micro_test_table_name}_encounter_id", observation_micro_test.c.encounter_id)
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -770,5 +830,8 @@ def build_project_metadata(
         procedure_icu=ProcedureICUTables(procedure_icu=procedure_icu),
         observation_labevents=ObservationLabeventsTables(
             observation_labevents=observation_labevents
+        ),
+        observation_micro_test=ObservationMicroTestTables(
+            observation_micro_test=observation_micro_test
         ),
     )

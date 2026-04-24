@@ -15,3 +15,4 @@ execution_order:
   - procedure_ed
   - procedure_icu
   - observation_labevents
+  - observation_micro_test

@@ -2,7 +2,7 @@
 Pipeline principal que orquestra a ingestão de Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
-ProcedureED, ProcedureICU e ObservationLabevents.
+ProcedureED, ProcedureICU, ObservationLabevents e ObservationMicroTest.
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ from src.ingestion.loaders.procedure_loader import ProcedureLoader
 from src.ingestion.loaders.procedure_ed_loader import ProcedureEDLoader
 from src.ingestion.loaders.procedure_icu_loader import ProcedureICULoader
 from src.ingestion.loaders.observation_labevents_loader import ObservationLabeventsLoader
+from src.ingestion.loaders.observation_micro_test_loader import ObservationMicroTestLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -47,6 +48,7 @@ from src.pipelines.ingest_procedure import ProcedureIngestionPipeline
 from src.pipelines.ingest_procedure_ed import ProcedureEDIngestionPipeline
 from src.pipelines.ingest_procedure_icu import ProcedureICUIngestionPipeline
 from src.pipelines.ingest_observation_labevents import ObservationLabeventsIngestionPipeline
+from src.pipelines.ingest_observation_micro_test import ObservationMicroTestIngestionPipeline
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -99,6 +101,7 @@ class IngestAllPipeline:
             settings.procedure_ed.table_name,
             settings.procedure_icu.table_name,
             settings.observation_labevents.table_name,
+            settings.observation_micro_test.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -146,6 +149,12 @@ class IngestAllPipeline:
             tables=tables.observation_labevents,
             patient_tables=tables.patient,
             specimen_tables=tables.specimen,
+        )
+        self._observation_micro_test_loader = ObservationMicroTestLoader(
+            tables=tables.observation_micro_test,
+            patient_tables=tables.patient,
+            specimen_tables=tables.specimen,
+            encounter_tables=tables.encounter,
         )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
@@ -212,6 +221,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._observation_labevents_loader,
             ),
+            "observation_micro_test": ObservationMicroTestIngestionPipeline(
+                settings=settings,
+                loader=self._observation_micro_test_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -238,9 +251,10 @@ class IngestAllPipeline:
             "procedure_ed",
             "procedure_icu",
             "observation_labevents",
+            "observation_micro_test",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test')."
             )
 
         started_at = perf_counter()
