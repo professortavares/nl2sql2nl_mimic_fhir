@@ -1,7 +1,7 @@
 """
 Definição do schema relacional enxuto para Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
-MedicationRequest e Specimen.
+MedicationRequest, Specimen e Condition.
 """
 
 from __future__ import annotations
@@ -88,6 +88,13 @@ class SpecimenTables:
 
 
 @dataclass(slots=True, frozen=True)
+class ConditionTables:
+    """Referência à tabela de Condition."""
+
+    condition: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -101,6 +108,7 @@ class ProjectTables:
     medication_mix: MedicationMixTables
     medication_request: MedicationRequestTables
     specimen: SpecimenTables
+    condition: ConditionTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -151,6 +159,7 @@ def build_project_metadata(
     medication_mix_ingredient_table_name: str,
     medication_request_table_name: str,
     specimen_table_name: str,
+    condition_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -185,6 +194,8 @@ def build_project_metadata(
         Nome físico da tabela de MedicationRequest.
     specimen_table_name : str
         Nome físico da tabela de Specimen.
+    condition_table_name : str
+        Nome físico da tabela de Condition.
 
     Retorno:
     -------
@@ -209,6 +220,7 @@ def build_project_metadata(
     )
     validate_identifier(medication_request_table_name, label="medication_request table")
     validate_identifier(specimen_table_name, label="specimen table")
+    validate_identifier(condition_table_name, label="condition table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -497,6 +509,32 @@ def build_project_metadata(
     )
     Index(f"ix_{specimen_table_name}_patient_id", specimen.c.patient_id)
 
+    condition = Table(
+        condition_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("condition_code", String(100), nullable=True),
+        Column("condition_code_system", Text(), nullable=True),
+        Column("condition_code_display", Text(), nullable=True),
+        Column("category_code", String(100), nullable=True),
+        Column("category_system", Text(), nullable=True),
+        Column("category_display", Text(), nullable=True),
+    )
+    Index(f"ix_{condition_table_name}_patient_id", condition.c.patient_id)
+    Index(f"ix_{condition_table_name}_encounter_id", condition.c.encounter_id)
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -517,4 +555,5 @@ def build_project_metadata(
         ),
         medication_request=MedicationRequestTables(medication_request=medication_request),
         specimen=SpecimenTables(specimen=specimen),
+        condition=ConditionTables(condition=condition),
     )

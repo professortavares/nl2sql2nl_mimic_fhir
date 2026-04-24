@@ -9,3 +9,4 @@ execution_order:
   - medication_mix
   - medication_request
   - specimen
+  - condition
