@@ -1,0 +1,4 @@
+pipeline_name: ingest_observation_datetimeevents
+input_path: data/MimicObservationDatetimeevents.ndjson.gz
+batch_size: 500
+table_name: observation_datetimeevents
