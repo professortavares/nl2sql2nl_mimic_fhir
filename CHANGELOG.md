@@ -4,6 +4,45 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.24.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationED.ndjson.gz` como continuação da oitava fase de ingestão.
+- Nova tabela principal `observation_ed` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `procedure_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `value_string`
+  - `data_absent_reason_code`
+  - `data_absent_reason_system`
+  - `data_absent_reason_display`
+- Transformer, loader e pipeline dedicados para `ObservationED`.
+- Testes de unidade para o transformer de `ObservationED`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationED` ao final.
+- Reestruturação do schema para incluir a tabela `observation_ed` e suas FKs para `patient`, `encounter` e `procedure`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a relação entre `ObservationED` e `Procedure`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationED`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_ed.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]`, `valueString` e `dataAbsentReason.coding[*]` para `ObservationED`.
+- Consolidação explícita de `subject.reference`, `encounter.reference` e `partOf[*].reference` com os tipos esperados `Patient`, `Encounter` e `Procedure` para `ObservationED`.
+- Normalização de `observation_ed.patient_id`, `observation_ed.encounter_id` e `observation_ed.procedure_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.23.0] - 2026-04-24
 
 ### Adicionado

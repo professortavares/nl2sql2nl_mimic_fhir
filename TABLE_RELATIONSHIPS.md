@@ -31,6 +31,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_chartevents`
 - `observation_datetimeevents`
 - `observation_outputevents`
+- `observation_ed`
 
 ## Foreign Keys
 
@@ -79,6 +80,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_datetimeevents.encounter_id -> encounter.id`
 - `observation_outputevents.patient_id -> patient.id`
 - `observation_outputevents.encounter_id -> encounter.id`
+- `observation_ed.patient_id -> patient.id`
+- `observation_ed.encounter_id -> encounter.id`
+- `observation_ed.procedure_id -> procedure.id`
 
 ## Diagramas Segmentados
 
@@ -826,7 +830,48 @@ medication
 +----------------+
 ```
 
-### 23) Visão Consolidada
+### 23) observationED com patient, encounter e procedure
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_ed.patient_id
+        |
++--------------------------+
+| observation_ed           |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| encounter_id             |
+| procedure_id             |
+| observation_code         |
+| effective_at             |
+| value_string             |
++--------------------------+
+        |              |
+        |              | observation_ed.procedure_id
+        |              v
+        |       +----------------+
+        |       |   procedure    |
+        |       |----------------|
+        |       | id (PK)        |
+        |       +----------------+
+        |
+        | observation_ed.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 24) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -871,6 +916,8 @@ patient --- observation_chartevents --- encounter
 patient --- observation_datetimeevents --- encounter
 
 patient --- observation_outputevents --- encounter
+
+patient --- observation_ed --- procedure / encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```
