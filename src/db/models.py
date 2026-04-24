@@ -23,6 +23,7 @@ from src.db.schema import (
     ObservationLabeventsTables,
     ObservationMicroTestTables,
     ObservationMicroOrgTables,
+    ObservationMicroSuscTables,
     SpecimenTables,
 )
 
@@ -45,5 +46,6 @@ __all__ = [
     "ObservationLabeventsTables",
     "ObservationMicroTestTables",
     "ObservationMicroOrgTables",
+    "ObservationMicroSuscTables",
     "ProjectTables",
 ]

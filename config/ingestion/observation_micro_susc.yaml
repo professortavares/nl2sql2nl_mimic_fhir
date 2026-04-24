@@ -1,0 +1,4 @@
+pipeline_name: ingest_observation_micro_susc
+input_path: data/MimicObservationMicroSusc.ndjson.gz
+batch_size: 500
+table_name: observation_micro_susc
