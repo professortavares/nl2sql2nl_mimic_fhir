@@ -4,6 +4,44 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.28.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicMedicationAdministration.ndjson.gz` como continuação da nona e última fase de ingestão.
+- Nova tabela principal `medication_administration` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `medication_request_id`
+  - `status`
+  - `effective_at`
+  - `medication_code`
+  - `medication_code_system`
+  - `dosage_text`
+  - `dose_value`
+  - `dose_unit`
+  - `dose_code`
+  - `dose_system`
+  - `method_code`
+  - `method_system`
+- Transformer, loader e pipeline dedicados para `MedicationAdministration`.
+- Testes de unidade para o transformer de `MedicationAdministration`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `MedicationAdministration` ao final.
+- Reestruturação do schema para incluir a tabela `medication_administration` e suas FKs para `patient`, `encounter` e `medication_request`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a observação de que não há FK para `Medication`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `MedicationAdministration`.
+- Atualização da configuração YAML para incluir `config/ingestion/medication_administration.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `medicationCodeableConcept.coding[*]`, `dosage.text`, `dosage.dose[*]` e `dosage.method.coding[*]` para `MedicationAdministration`.
+- Consolidação explícita de `subject.reference`, `context.reference` e `request.reference` com os tipos esperados `Patient`, `Encounter` e `MedicationRequest` para `MedicationAdministration`.
+- Normalização de `medication_administration.patient_id`, `medication_administration.encounter_id` e `medication_administration.medication_request_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.27.0] - 2026-04-24
 
 ### Adicionado
