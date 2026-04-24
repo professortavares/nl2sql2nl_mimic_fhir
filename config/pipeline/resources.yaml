@@ -18,3 +18,4 @@ execution_order:
   - observation_micro_test
   - observation_micro_org
   - observation_micro_susc
+  - observation_chartevents

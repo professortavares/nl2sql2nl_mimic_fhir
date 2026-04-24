@@ -102,6 +102,7 @@ class ProjectSettings:
     observation_micro_test: ResourceIngestionSettings
     observation_micro_org: ResourceIngestionSettings
     observation_micro_susc: ResourceIngestionSettings
+    observation_chartevents: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -296,6 +297,7 @@ def load_project_settings() -> ProjectSettings:
     observation_micro_test_yaml = load_yaml_file(root / "config/ingestion/observation_micro_test.yaml")
     observation_micro_org_yaml = load_yaml_file(root / "config/ingestion/observation_micro_org.yaml")
     observation_micro_susc_yaml = load_yaml_file(root / "config/ingestion/observation_micro_susc.yaml")
+    observation_chartevents_yaml = load_yaml_file(root / "config/ingestion/observation_chartevents.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -448,6 +450,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/observation_micro_susc.yaml",
         root=root,
     )
+    observation_chartevents = _load_resource_settings(
+        observation_chartevents_yaml,
+        source=root / "config/ingestion/observation_chartevents.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -473,6 +480,7 @@ def load_project_settings() -> ProjectSettings:
         observation_micro_test=observation_micro_test,
         observation_micro_org=observation_micro_org,
         observation_micro_susc=observation_micro_susc,
+        observation_chartevents=observation_chartevents,
     )
 
 

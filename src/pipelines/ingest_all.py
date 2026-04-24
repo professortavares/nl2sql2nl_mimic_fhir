@@ -2,8 +2,8 @@
 Pipeline principal que orquestra a ingestão de Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
-ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest e
-ObservationMicroOrg e ObservationMicroSusc.
+ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
+ObservationMicroOrg, ObservationMicroSusc e ObservationChartevents.
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from src.ingestion.loaders.observation_labevents_loader import ObservationLabeve
 from src.ingestion.loaders.observation_micro_test_loader import ObservationMicroTestLoader
 from src.ingestion.loaders.observation_micro_org_loader import ObservationMicroOrgLoader
 from src.ingestion.loaders.observation_micro_susc_loader import ObservationMicroSuscLoader
+from src.ingestion.loaders.observation_chartevents_loader import ObservationCharteventsLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -54,6 +55,7 @@ from src.pipelines.ingest_observation_labevents import ObservationLabeventsInges
 from src.pipelines.ingest_observation_micro_test import ObservationMicroTestIngestionPipeline
 from src.pipelines.ingest_observation_micro_org import ObservationMicroOrgIngestionPipeline
 from src.pipelines.ingest_observation_micro_susc import ObservationMicroSuscIngestionPipeline
+from src.pipelines.ingest_observation_chartevents import ObservationCharteventsIngestionPipeline
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -110,6 +112,7 @@ class IngestAllPipeline:
             settings.observation_micro_org.table_name,
             settings.observation_micro_org.auxiliary_table_name or "observation_micro_org_has_member",
             settings.observation_micro_susc.table_name,
+            settings.observation_chartevents.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -173,6 +176,11 @@ class IngestAllPipeline:
             tables=tables.observation_micro_susc,
             patient_tables=tables.patient,
             observation_micro_org_tables=tables.observation_micro_org,
+        )
+        self._observation_chartevents_loader = ObservationCharteventsLoader(
+            tables=tables.observation_chartevents,
+            patient_tables=tables.patient,
+            encounter_tables=tables.encounter,
         )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
@@ -251,6 +259,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._observation_micro_susc_loader,
             ),
+            "observation_chartevents": ObservationCharteventsIngestionPipeline(
+                settings=settings,
+                loader=self._observation_chartevents_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -280,9 +292,10 @@ class IngestAllPipeline:
             "observation_micro_test",
             "observation_micro_org",
             "observation_micro_susc",
+            "observation_chartevents",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc', 'observation_chartevents')."
             )
 
         started_at = perf_counter()
