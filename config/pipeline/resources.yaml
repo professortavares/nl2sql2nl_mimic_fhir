@@ -12,3 +12,4 @@ execution_order:
   - condition
   - condition_ed
   - procedure
+  - procedure_ed

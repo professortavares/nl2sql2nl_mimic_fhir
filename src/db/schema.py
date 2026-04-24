@@ -1,7 +1,7 @@
 """
 Definição do schema relacional enxuto para Organization, Location, Patient,
 Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
-MedicationRequest, Specimen, Condition e Procedure.
+MedicationRequest, Specimen, Condition, ConditionED, Procedure e ProcedureED.
 """
 
 from __future__ import annotations
@@ -109,6 +109,13 @@ class ProcedureTables:
 
 
 @dataclass(slots=True, frozen=True)
+class ProcedureEDTables:
+    """Referência à tabela de ProcedureED."""
+
+    procedure_ed: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -125,6 +132,7 @@ class ProjectTables:
     condition: ConditionTables
     condition_ed: ConditionEDTables
     procedure: ProcedureTables
+    procedure_ed: ProcedureEDTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -178,6 +186,7 @@ def build_project_metadata(
     condition_table_name: str,
     condition_ed_table_name: str,
     procedure_table_name: str,
+    procedure_ed_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -218,6 +227,8 @@ def build_project_metadata(
         Nome físico da tabela de ConditionED.
     procedure_table_name : str
         Nome físico da tabela de Procedure.
+    procedure_ed_table_name : str
+        Nome físico da tabela de ProcedureED.
 
     Retorno:
     -------
@@ -245,6 +256,7 @@ def build_project_metadata(
     validate_identifier(condition_table_name, label="condition table")
     validate_identifier(condition_ed_table_name, label="condition_ed table")
     validate_identifier(procedure_table_name, label="procedure table")
+    validate_identifier(procedure_ed_table_name, label="procedure_ed table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -610,6 +622,31 @@ def build_project_metadata(
     Index(f"ix_{procedure_table_name}_patient_id", procedure.c.patient_id)
     Index(f"ix_{procedure_table_name}_encounter_id", procedure.c.encounter_id)
 
+    procedure_ed = Table(
+        procedure_ed_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("procedure_code", String(100), nullable=True),
+        Column("procedure_code_system", Text(), nullable=True),
+        Column("procedure_code_display", Text(), nullable=True),
+        Column("performed_at", String(40), nullable=True),
+    )
+    Index(f"ix_{procedure_ed_table_name}_patient_id", procedure_ed.c.patient_id)
+    Index(f"ix_{procedure_ed_table_name}_encounter_id", procedure_ed.c.encounter_id)
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -633,4 +670,5 @@ def build_project_metadata(
         condition=ConditionTables(condition=condition),
         condition_ed=ConditionEDTables(condition_ed=condition_ed),
         procedure=ProcedureTables(procedure=procedure),
+        procedure_ed=ProcedureEDTables(procedure_ed=procedure_ed),
     )
