@@ -35,6 +35,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_vital_signs_ed`
 - `observation_vital_signs_ed_component`
 - `medication_dispense`
+- `medication_dispense_ed`
 
 ## Foreign Keys
 
@@ -93,6 +94,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_dispense.patient_id -> patient.id`
 - `medication_dispense.encounter_id -> encounter.id`
 - `medication_dispense.medication_request_id -> medication_request.id`
+- `medication_dispense_ed.patient_id -> patient.id`
+- `medication_dispense_ed.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -417,6 +420,38 @@ medication
         |       +--------------------+
         |
         | medication_dispense.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 11) MedicationDispenseED com patient e encounter
+
+```text
++----------------+
+|    patient     |
++----------------+
+        ^
+        |
+        | medication_dispense_ed.patient_id
+        |
++--------------------------+
+| medication_dispense_ed   |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| encounter_id             |
+| status                   |
+| when_handed_over         |
+| medication_text          |
+| medication_code          |
+| medication_code_system   |
++--------------------------+
+        |
+        | medication_dispense_ed.encounter_id
         v
 +----------------+
 |   encounter    |
@@ -1034,6 +1069,8 @@ patient --- observation_vital_signs_ed --- procedure / encounter
 observation_vital_signs_ed --- observation_vital_signs_ed_component
 
 patient --- medication_dispense --- medication_request / encounter
+
+patient --- medication_dispense_ed --- encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```

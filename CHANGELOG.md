@@ -4,6 +4,37 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.27.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicMedicationDispenseED.ndjson.gz` como continuação da nona e última fase de ingestão.
+- Nova tabela principal `medication_dispense_ed` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `when_handed_over`
+  - `medication_text`
+  - `medication_code`
+  - `medication_code_system`
+- Transformer, loader e pipeline dedicados para `MedicationDispenseED`.
+- Testes de unidade para o transformer de `MedicationDispenseED`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `MedicationDispenseED` ao final.
+- Reestruturação do schema para incluir a tabela `medication_dispense_ed` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a observação de que não há FK para `MedicationRequest` nem `Medication`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `MedicationDispenseED`.
+- Atualização da configuração YAML para incluir `config/ingestion/medication_dispense_ed.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `whenHandedOver` e `medicationCodeableConcept.coding[*]` para `MedicationDispenseED`.
+- Consolidação explícita de `subject.reference` e `context.reference` com os tipos esperados `Patient` e `Encounter` para `MedicationDispenseED`.
+- Normalização de `medication_dispense_ed.patient_id` e `medication_dispense_ed.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.26.0] - 2026-04-24
 
 ### Adicionado
