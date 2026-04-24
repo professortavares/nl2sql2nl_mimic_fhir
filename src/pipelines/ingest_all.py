@@ -4,7 +4,7 @@ Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
 ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
 ObservationMicroOrg, ObservationMicroSusc, ObservationChartevents,
-ObservationDatetimeevents e ObservationOutputevents.
+ObservationDatetimeevents, ObservationOutputevents e ObservationED.
 """
 
 from __future__ import annotations
@@ -39,6 +39,7 @@ from src.ingestion.loaders.observation_micro_susc_loader import ObservationMicro
 from src.ingestion.loaders.observation_chartevents_loader import ObservationCharteventsLoader
 from src.ingestion.loaders.observation_datetimeevents_loader import ObservationDatetimeeventsLoader
 from src.ingestion.loaders.observation_outputevents_loader import ObservationOutputeventsLoader
+from src.ingestion.loaders.observation_ed_loader import ObservationEDLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -63,6 +64,7 @@ from src.pipelines.ingest_observation_datetimeevents import (
     ObservationDatetimeeventsIngestionPipeline,
 )
 from src.pipelines.ingest_observation_outputevents import ObservationOutputeventsIngestionPipeline
+from src.pipelines.ingest_observation_ed import ObservationEDIngestionPipeline
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -122,6 +124,7 @@ class IngestAllPipeline:
             settings.observation_chartevents.table_name,
             settings.observation_datetimeevents.table_name,
             settings.observation_outputevents.table_name,
+            settings.observation_ed.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -200,6 +203,12 @@ class IngestAllPipeline:
             tables=tables.observation_outputevents,
             patient_tables=tables.patient,
             encounter_tables=tables.encounter,
+        )
+        self._observation_ed_loader = ObservationEDLoader(
+            tables=tables.observation_ed,
+            patient_tables=tables.patient,
+            encounter_tables=tables.encounter,
+            procedure_tables=tables.procedure,
         )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
@@ -290,6 +299,7 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._observation_outputevents_loader,
             ),
+            "observation_ed": ObservationEDIngestionPipeline(settings=settings, loader=self._observation_ed_loader),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -322,9 +332,10 @@ class IngestAllPipeline:
             "observation_chartevents",
             "observation_datetimeevents",
             "observation_outputevents",
+            "observation_ed",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc', 'observation_chartevents', 'observation_datetimeevents', 'observation_outputevents')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc', 'observation_chartevents', 'observation_datetimeevents', 'observation_outputevents', 'observation_ed')."
             )
 
         started_at = perf_counter()

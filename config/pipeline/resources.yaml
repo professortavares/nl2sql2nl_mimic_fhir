@@ -21,3 +21,4 @@ execution_order:
   - observation_chartevents
   - observation_datetimeevents
   - observation_outputevents
+  - observation_ed

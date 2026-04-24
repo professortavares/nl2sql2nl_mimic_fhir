@@ -1,0 +1,4 @@
+pipeline_name: ingest_observation_ed
+input_path: data/MimicObservationED.ndjson.gz
+batch_size: 500
+table_name: observation_ed

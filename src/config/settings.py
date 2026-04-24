@@ -105,6 +105,7 @@ class ProjectSettings:
     observation_chartevents: ResourceIngestionSettings
     observation_datetimeevents: ResourceIngestionSettings
     observation_outputevents: ResourceIngestionSettings
+    observation_ed: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -304,6 +305,7 @@ def load_project_settings() -> ProjectSettings:
         root / "config/ingestion/observation_datetimeevents.yaml"
     )
     observation_outputevents_yaml = load_yaml_file(root / "config/ingestion/observation_outputevents.yaml")
+    observation_ed_yaml = load_yaml_file(root / "config/ingestion/observation_ed.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -471,6 +473,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/observation_outputevents.yaml",
         root=root,
     )
+    observation_ed = _load_resource_settings(
+        observation_ed_yaml,
+        source=root / "config/ingestion/observation_ed.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -499,6 +506,7 @@ def load_project_settings() -> ProjectSettings:
         observation_chartevents=observation_chartevents,
         observation_datetimeevents=observation_datetimeevents,
         observation_outputevents=observation_outputevents,
+        observation_ed=observation_ed,
     )
 
 
