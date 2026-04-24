@@ -13,7 +13,8 @@ from src.pipelines.ingest_all import IngestAllPipeline
 
 def main() -> int:
     """
-    Executa a ingestão completa de Organization, Location, Patient, Encounter, EncounterED e EncounterICU.
+    Executa a ingestão completa de Organization, Location, Patient, Encounter,
+    EncounterED, EncounterICU e Medication.
 
     Retorno:
     -------
@@ -31,25 +32,18 @@ def main() -> int:
         pipeline = IngestAllPipeline(settings)
         summary = pipeline.run()
 
-        logger.info(
-            "Execução concluída com sucesso: organization_lidos=%s organization_inseridos=%s "
-            "location_lidos=%s location_inseridos=%s patient_lidos=%s patient_inseridos=%s "
-            "encounter_lidos=%s encounter_inseridos=%s encounter_ed_lidos=%s encounter_ed_inseridos=%s "
-            "encounter_icu_lidos=%s encounter_icu_inseridos=%s tempo=%.2fs",
-            summary.resource_summaries["organization"].records_read,
-            summary.resource_summaries["organization"].records_inserted,
-            summary.resource_summaries["location"].records_read,
-            summary.resource_summaries["location"].records_inserted,
-            summary.resource_summaries["patient"].records_read,
-            summary.resource_summaries["patient"].records_inserted,
-            summary.resource_summaries["encounter"].records_read,
-            summary.resource_summaries["encounter"].records_inserted,
-            summary.resource_summaries["encounter_ed"].records_read,
-            summary.resource_summaries["encounter_ed"].records_inserted,
-            summary.resource_summaries["encounter_icu"].records_read,
-            summary.resource_summaries["encounter_icu"].records_inserted,
-            summary.elapsed_seconds,
-        )
+        for resource_name in settings.resources.execution_order:
+            resource_summary = summary.resource_summaries[resource_name]
+            logger.info(
+                "Resumo %s: lidos=%s inseridos=%s ignorados=%s tabelas=%s",
+                resource_name,
+                resource_summary.records_read,
+                resource_summary.records_inserted,
+                resource_summary.skipped_records,
+                resource_summary.table_counts,
+            )
+
+        logger.info("Execução concluída com sucesso em %.2fs", summary.elapsed_seconds)
         return 0
     except Exception as exc:  # pragma: no cover - falha de CLI
         logging.exception("Falha na execução da ingestão: %s", exc)

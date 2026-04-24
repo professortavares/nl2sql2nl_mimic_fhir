@@ -1,55 +1,49 @@
 # nl2sql2nl_mimic_fhir
 
-Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional simplificada, logging em arquivo e orquestração rígida por dependências entre recursos.
+Pipeline em Python para ingerir recursos FHIR compactados em gzip no PostgreSQL local, com modelagem relacional simplificada, orquestração rígida por dependências entre recursos e logging em arquivo.
 
 ## Visão Geral
 
-O projeto está organizado em fases de ingestão.
+O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate` do schema, recria as tabelas e reinsere os dados do zero.
 
 ### Fase 1
 
-Arquivos suportados:
-
-1. `data/MimicOrganization.ndjson.gz`
-2. `data/MimicLocation.ndjson.gz`
-3. `data/MimicPatient.ndjson.gz`
+1. `MimicOrganization.ndjson.gz`
+2. `MimicLocation.ndjson.gz`
+3. `MimicPatient.ndjson.gz`
 
 ### Fase 2
 
-Arquivos suportados:
+4. `MimicEncounter.ndjson.gz`
+5. `MimicEncounterED.ndjson.gz`
+6. `MimicEncounterICU.ndjson.gz`
 
-4. `data/MimicEncounter.ndjson.gz`
-5. `data/MimicEncounterED.ndjson.gz`
-6. `data/MimicEncounterICU.ndjson.gz`
+### Fase 3
 
-A ordem de importação é obrigatória:
+7. `MimicMedication.ndjson.gz`
 
-1. `Organization`
-2. `Location`
-3. `Patient`
-4. `Encounter`
-5. `EncounterED`
-6. `EncounterICU`
+### Ordem obrigatória da pipeline
 
-A pipeline faz reset completo do schema, recria a estrutura e ingere os dados novamente a cada execução. O desenho continua preparado para novas fases sem exigir acoplamento excessivo entre recursos.
+1. reset completo do schema
+2. criação das tabelas
+3. ingestão de `Organization`
+4. ingestão de `Location`
+5. ingestão de `Patient`
+6. ingestão de `Encounter`
+7. ingestão de `EncounterED`
+8. ingestão de `EncounterICU`
+9. ingestão de `Medication`
 
-## Requisitos
+## Pré-requisitos
 
 - Python 3.13 ou superior
 - `uv`
 - PostgreSQL local acessível em `localhost:5432`
 - Docker, se o banco estiver em container
 
-## Fontes de Dados
+## Configuração do Banco
 
-- Download dos arquivos de ingestão: https://physionet.org/content/mimic-iv-fhir-demo/2.1.0/
-- Documentação do MIMIC FHIR: https://mimic.mit.edu/fhir/index.html
-
-## Configuração
-
-### `.env`
-
-As credenciais ficam somente no `.env` da raiz do projeto:
+As credenciais ficam somente no arquivo `.env` da raiz do projeto:
 
 ```dotenv
 POSTGRES_HOST=localhost
@@ -59,48 +53,52 @@ POSTGRES_USER=app_mimic_fhir
 POSTGRES_PASSWORD=app_mimic_fhir
 ```
 
-### YAMLs em `config/`
+As demais configurações não sensíveis ficam em YAML dentro de `./config`.
 
-As configurações não sensíveis ficam versionadas em YAML:
+## Configuração em `./config`
 
 - `config/database.yaml`
-  - schema PostgreSQL
+  - nome do schema
   - flags de conexão
 - `config/logging.yaml`
   - diretório de log
-  - nome do arquivo
+  - nome do arquivo de log
   - nível
   - rotação
 - `config/ingestion/common.yaml`
   - política de reset
-  - política de registros inválidos
+  - política para registros inválidos
   - batch size padrão
 - `config/ingestion/organization.yaml`
-  - caminho do arquivo de `Organization`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela
+  - nome da tabela
 - `config/ingestion/location.yaml`
-  - caminho do arquivo de `Location`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela
+  - nome da tabela
 - `config/ingestion/patient.yaml`
-  - caminho do arquivo de `Patient`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela
+  - nome da tabela
 - `config/ingestion/encounter.yaml`
-  - caminho do arquivo de `Encounter`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela principal
-  - nome físico da tabela auxiliar de localizações
+  - nome da tabela principal
+  - nome da tabela auxiliar de localizações
 - `config/ingestion/encounter_ed.yaml`
-  - caminho do arquivo de `EncounterED`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela especializada
+  - nome da tabela
 - `config/ingestion/encounter_icu.yaml`
-  - caminho do arquivo de `EncounterICU`
+  - caminho do arquivo
   - batch size
-  - nome físico da tabela especializada
-  - nome físico da tabela auxiliar de localizações
+  - nome da tabela principal
+  - nome da tabela auxiliar de localizações
+- `config/ingestion/medication.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -120,110 +118,120 @@ Execute a pipeline completa com:
 uv run python -m src.main
 ```
 
-Também é possível usar diretamente:
+Ou, se preferir:
 
 ```bash
 python -m src.main
 ```
 
-## Ordem Da Pipeline
+## Resumo da Modelagem
 
-A execução principal segue exatamente esta ordem:
+### Tabelas finais
 
-1. reset completo do schema relacionado
-2. criação das tabelas
-3. ingestão de `Organization`
-4. ingestão de `Location`
-5. ingestão de `Patient`
-6. ingestão de `Encounter`
-7. ingestão de `EncounterED`
-8. ingestão de `EncounterICU`
+- `organization`
+- `location`
+- `patient`
+- `encounter`
+- `encounter_location`
+- `encounter_ed`
+- `encounter_icu`
+- `encounter_icu_location`
+- `medication`
 
-## Modelagem Final
+### Organização, Location e Patient
 
-### Tabela `organization`
+- `organization`
+  - `id` `PK`
+  - `name`
+- `location`
+  - `id` `PK`
+  - `name`
+  - `managing_organization_id` `FK -> organization.id` `nullable`
+- `patient`
+  - `id` `PK`
+  - `gender`
+  - `birth_date`
+  - `name`
+  - `identifier`
+  - `marital_status_coding`
+  - `race`
+  - `ethnicity`
+  - `birthsex`
+  - `managing_organization_id` `FK -> organization.id` `nullable`
 
-- `id` `PK`
-- `name`
+### Encounter
 
-### Tabela `location`
+- `encounter`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `organization_id` `FK -> organization.id` `nullable`
+  - `status`
+  - `class_code`
+  - `start_date`
+  - `end_date`
+  - `priority_code`
+  - `service_type_code`
+  - `admit_source_code`
+  - `discharge_disposition_code`
+  - `identifier`
+- `encounter_location`
+  - `encounter_id` `FK -> encounter.id`
+  - `location_id` `FK -> location.id` `nullable`
+  - `start_date`
+  - `end_date`
 
-- `id` `PK`
-- `name`
-- `managing_organization_id` `FK -> organization.id` `nullable`
+### EncounterED
 
-### Tabela `patient`
+- `encounter_ed`
+  - `id` `PK`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `organization_id` `FK -> organization.id` `nullable`
+  - `status`
+  - `class_code`
+  - `start_date`
+  - `end_date`
+  - `admit_source_code`
+  - `discharge_disposition_code`
+  - `identifier`
 
-- `id` `PK`
-- `gender`
-- `birth_date`
-- `name`
-- `identifier`
-- `marital_status_coding`
-- `race`
-- `ethnicity`
-- `birthsex`
-- `managing_organization_id` `FK -> organization.id` `nullable`
+### EncounterICU
 
-### Tabela `encounter`
+- `encounter_icu`
+  - `id` `PK`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `status`
+  - `class_code`
+  - `start_date`
+  - `end_date`
+  - `identifier`
+- `encounter_icu_location`
+  - `encounter_icu_id` `FK -> encounter_icu.id`
+  - `location_id` `FK -> location.id` `nullable`
+  - `start_date`
+  - `end_date`
 
-- `id` `PK`
-- `patient_id` `FK -> patient.id` `nullable`
-- `organization_id` `FK -> organization.id` `nullable`
-- `status`
-- `class_code`
-- `start_date`
-- `end_date`
-- `priority_code`
-- `service_type_code`
-- `admit_source_code`
-- `discharge_disposition_code`
-- `identifier`
+### Medication
 
-### Tabela `encounter_location`
+`Medication` entra nesta fase como uma **dimensão independente**.
 
-- `encounter_id` `FK -> encounter.id`
-- `location_id` `FK -> location.id` `nullable`
-- `start_date`
-- `end_date`
+- `medication`
+  - `id` `PK`
+  - `code`
+  - `code_system`
+  - `status`
+  - `ndc`
+  - `formulary_drug_cd`
+  - `name`
 
-### Tabela `encounter_ed`
+Não foram observadas referências FHIR diretas confiáveis para `Patient`, `Encounter`, `Organization` ou `Location` no arquivo `MimicMedication.ndjson.gz`, então nenhuma FK nova é criada nesta fase.
 
-- `id` `PK`
-- `encounter_id` `FK -> encounter.id` `nullable`
-- `patient_id` `FK -> patient.id` `nullable`
-- `organization_id` `FK -> organization.id` `nullable`
-- `status`
-- `class_code`
-- `start_date`
-- `end_date`
-- `admit_source_code`
-- `discharge_disposition_code`
-- `identifier`
+## Estratégia de Consolidação
 
-### Tabela `encounter_icu`
+Quando um recurso contém listas FHIR, a ingestão usa sempre o **primeiro valor não vazio e válido encontrado**.
 
-- `id` `PK`
-- `encounter_id` `FK -> encounter.id` `nullable`
-- `patient_id` `FK -> patient.id` `nullable`
-- `status`
-- `class_code`
-- `start_date`
-- `end_date`
-- `identifier`
-
-### Tabela `encounter_icu_location`
-
-- `encounter_icu_id` `FK -> encounter_icu.id`
-- `location_id` `FK -> location.id` `nullable`
-- `start_date`
-- `end_date`
-
-## Estratégia De Consolidação
-
-Quando uma estrutura FHIR contém listas, a ingestão adota sempre o **primeiro valor não vazio e válido encontrado**.
-
-Isso vale para:
+Isso vale, por exemplo, para:
 
 - `name[*].family`
 - `identifier[*].value`
@@ -233,20 +241,19 @@ Isso vale para:
 - `location[*].location.reference`
 - `hospitalization.admitSource.coding[*].code`
 - `hospitalization.dischargeDisposition.coding[*].code`
+- `code.coding[*].code`
+- `code.coding[*].system`
+- identificadores de `Medication` filtrados por `system`
 
-As extensões US Core de `Patient` também foram simplificadas:
+Em `Medication`, os identificadores são consolidados por `system`:
 
-- race: `text`
-- ethnicity: `text`
-- birthsex: `valueCode`
-
-No `Encounter`, a referência `serviceProvider.reference` é usada como fonte preferencial para `organization_id`.
-
-No `EncounterED`, `partOf.reference` materializa `encounter_id` e deixa explícita a relação de especialização com `encounter`.
-
-No `EncounterICU`, `partOf.reference` materializa `encounter_id`, `subject.reference` materializa `patient_id` e o relacionamento com `organization` não é criado, porque não foi identificado `serviceProvider.reference` nos arquivos observados.
+- `mimic-medication-ndc` -> `ndc`
+- `mimic-medication-formulary-drug-cd` -> `formulary_drug_cd`
+- `mimic-medication-name` -> `name`
 
 ## Relacionamentos
+
+Os relacionamentos atualmente materializados são:
 
 - `location.managing_organization_id -> organization.id`
 - `patient.managing_organization_id -> organization.id`
@@ -262,29 +269,31 @@ No `EncounterICU`, `partOf.reference` materializa `encounter_id`, `subject.refer
 - `encounter_icu_location.encounter_icu_id -> encounter_icu.id`
 - `encounter_icu_location.location_id -> location.id`
 
-Se a referência estiver ausente, a coluna permanece nula quando isso fizer sentido. Se existir, o valor precisa seguir o formato FHIR correto. O parser reutilizável de referências fica em `src/ingestion/parsers/fhir_reference_parser.py`.
-
-O diagrama ASCII segmentado das relações está documentado em [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md).
-
 ## Logging
 
-O logging é salvo em arquivo e também pode ir para o console:
+Os logs são gravados em `./logs`, com arquivo principal configurado em `config/logging.yaml`.
 
-- diretório: `logs/`
-- arquivo: `logs/ingestion.log`
+Exemplo padrão:
 
-O arquivo usa rotação com `logging.handlers.RotatingFileHandler`.
+- `logs/ingestion.log`
+
+A configuração suporta:
+
+- criação automática do diretório
+- saída em console
+- rotação por tamanho
+- backup de arquivos antigos
 
 ## Reset Total
 
-Cada execução:
+A execução segue a política `drop_and_recreate`:
 
-1. abre uma conexão com o PostgreSQL;
-2. derruba o schema configurado;
-3. recria o schema e as tabelas;
-4. ingere os recursos novamente.
+1. abre a conexão com o banco
+2. destrói o schema de ingestão
+3. recria o schema e as tabelas
+4. reinsere todos os dados
 
-O comportamento padrão é `drop_and_recreate`.
+Essa política é configurada em `config/ingestion/common.yaml`.
 
 ## Testes
 
@@ -298,36 +307,8 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED` e `EncounterICU`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU` e `Medication`
 
-## Entrada Principal
+## Documentação Relacional
 
-O ponto de entrada principal é:
-
-```bash
-python -m src.main
-```
-
-## Saída Esperada
-
-Exemplo de terminal:
-
-```text
-2026-04-23 12:00:00,000 | INFO | src.main | Logging configurado em /path/to/logs/ingestion.log
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu')
-2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:01,234 | INFO | src.main | Execução concluída com sucesso: organization_lidos=... organization_inseridos=... location_lidos=... location_inseridos=... patient_lidos=... patient_inseridos=... encounter_lidos=... encounter_inseridos=... encounter_ed_lidos=... encounter_ed_inseridos=... encounter_icu_lidos=... encounter_icu_inseridos=... tempo=...
-```
-
-Exemplo de log em arquivo:
-
-```text
-2026-04-23 12:00:00,001 | INFO | src.pipelines.ingest_all | Iniciando processo de ingestão completo com ordem: ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu')
-2026-04-23 12:00:00,010 | INFO | src.pipelines.ingest_all | Schema resetado e tabelas criadas: mimic_fhir_ingestion
-2026-04-23 12:00:00,020 | INFO | src.pipelines.base_resource_pipeline | Processando arquivo /path/to/data/MimicEncounterICU.ndjson.gz para recurso EncounterICU
-2026-04-23 12:00:00,030 | INFO | src.pipelines.base_resource_pipeline | Resumo EncounterICU: lidos=... inseridos=... ignorados=... tempo=... tabelas={'encounter_icu': ..., 'encounter_icu_location': ...}
-```
-
-## Evolução Futura
-
-A base ficou preparada para incorporar novos recursos FHIR em fases posteriores sem reintroduzir, por padrão, tabelas auxiliares que não tragam ganho analítico imediato.
+Veja também [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) para uma visão segmentada dos relacionamentos entre as tabelas.

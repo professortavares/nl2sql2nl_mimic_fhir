@@ -1,6 +1,6 @@
 """
 Definição do schema relacional enxuto para Organization, Location, Patient,
-Encounter, EncounterED e EncounterICU.
+Encounter, EncounterED, EncounterICU e Medication.
 """
 
 from __future__ import annotations
@@ -58,6 +58,13 @@ class EncounterICUTables:
 
 
 @dataclass(slots=True, frozen=True)
+class MedicationTables:
+    """Referência à tabela de Medication."""
+
+    medication: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -67,6 +74,7 @@ class ProjectTables:
     encounter: EncounterTables
     encounter_ed: EncounterEDTables
     encounter_icu: EncounterICUTables
+    medication: MedicationTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -112,6 +120,7 @@ def build_project_metadata(
     encounter_ed_table_name: str,
     encounter_icu_table_name: str,
     encounter_icu_location_table_name: str,
+    medication_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -136,6 +145,8 @@ def build_project_metadata(
         Nome físico da tabela de EncounterICU.
     encounter_icu_location_table_name : str
         Nome físico da tabela auxiliar de EncounterICU/Location.
+    medication_table_name : str
+        Nome físico da tabela de Medication.
 
     Retorno:
     -------
@@ -152,6 +163,7 @@ def build_project_metadata(
     validate_identifier(encounter_ed_table_name, label="encounter_ed table")
     validate_identifier(encounter_icu_table_name, label="encounter_icu table")
     validate_identifier(encounter_icu_location_table_name, label="encounter_icu_location table")
+    validate_identifier(medication_table_name, label="medication table")
 
     metadata = MetaData(schema=schema_name)
 
@@ -339,6 +351,18 @@ def build_project_metadata(
         encounter_icu_location.c.location_id,
     )
 
+    medication = Table(
+        medication_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column("code", String(100), nullable=True),
+        Column("code_system", Text(), nullable=True),
+        Column("status", String(50), nullable=True),
+        Column("ndc", Text(), nullable=True),
+        Column("formulary_drug_cd", Text(), nullable=True),
+        Column("name", Text(), nullable=True),
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -352,4 +376,5 @@ def build_project_metadata(
             encounter_icu=encounter_icu,
             encounter_icu_location=encounter_icu_location,
         ),
+        medication=MedicationTables(medication=medication),
     )

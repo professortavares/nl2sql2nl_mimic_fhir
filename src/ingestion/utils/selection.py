@@ -4,7 +4,7 @@ Utilitários para seleção do primeiro valor textual válido.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any, Mapping
 
 
@@ -76,6 +76,42 @@ def first_text_from_mappings(values: Any, key: str) -> str | None:
         return None
     for item in values:
         if not isinstance(item, Mapping):
+            continue
+        normalized = first_non_empty_text(item.get(key))
+        if normalized is not None:
+            return normalized
+    return None
+
+
+def first_text_from_mappings_matching(
+    values: Any,
+    key: str,
+    predicate: Callable[[Mapping[str, Any]], bool],
+) -> str | None:
+    """
+    Retorna o primeiro texto não vazio de uma lista de mapeamentos que satisfaçam um predicado.
+
+    Parâmetros:
+    ----------
+    values : Any
+        Coleção de mapeamentos FHIR.
+    key : str
+        Chave a ser lida em cada mapeamento.
+    predicate : Callable[[Mapping[str, Any]], bool]
+        Função que decide se um item deve ser considerado.
+
+    Retorno:
+    -------
+    str | None
+        O primeiro texto válido encontrado.
+    """
+
+    if not isinstance(values, Iterable) or isinstance(values, (str, bytes, Mapping)):
+        return None
+    for item in values:
+        if not isinstance(item, Mapping):
+            continue
+        if not predicate(item):
             continue
         normalized = first_non_empty_text(item.get(key))
         if normalized is not None:

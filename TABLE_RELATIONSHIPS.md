@@ -1,7 +1,7 @@
 # Relacionamentos Entre Tabelas
 
-Este documento resume a modelagem relacional atualmente criada pela pipeline de ingestão.
-A documentação está separada em blocos menores para facilitar a leitura por relacionamento.
+Este documento resume a modelagem relacional criada pela pipeline de ingestão.
+A leitura é segmentada em blocos menores para facilitar a navegação por relacionamento.
 
 ## Tabelas Existentes
 
@@ -13,6 +13,7 @@ A documentação está separada em blocos menores para facilitar a leitura por r
 - `encounter_ed`
 - `encounter_icu`
 - `encounter_icu_location`
+- `medication`
 
 ## Foreign Keys
 
@@ -200,7 +201,7 @@ A documentação está separada em blocos menores para facilitar a leitura por r
            |
            |
 +----------------------+
-|    encounter_icu    |
+|    encounter_icu     |
 |----------------------|
 | id (PK)              |
 | encounter_id (FK)    |
@@ -239,82 +240,46 @@ A documentação está separada em blocos menores para facilitar a leitura por r
 +----------------------+
 ```
 
-### 7) Visão Consolidada
+### 7) Medication como dimensão independente
+
+`Medication` foi incluído nesta fase sem foreign keys diretas, porque o arquivo `MimicMedication.ndjson.gz` não mostrou referências FHIR explícitas e confiáveis para as demais entidades já ingeridas.
 
 ```text
-+----------------------+      +----------------------+
-|     organization     |      |       location       |
-|----------------------|      |----------------------|
-| id (PK)              |      | id (PK)              |
-| name                 |      | name                 |
-+----------------------+      | managing_organization_id (FK)
-           ^                  +----------------------+
-           |                             ^
-           |                             |
-           |                             |
-           |                  +----------------------+
-           |                  |       patient        |
-           |                  |----------------------|
-           |                  | id (PK)              |
-           |                  | ...                  |
-           |                  | managing_organization_id (FK)
-           |                  +----------------------+
-           |                             ^
-           |                             |
-           |                             |
-           |                  +----------------------+
-           |                  |      encounter       |
-           |                  |----------------------|
-           |                  | id (PK)              |
-           |                  | patient_id (FK)      |
-           |                  | organization_id (FK) |
-           |                  | ...                  |
-           |                  +----------------------+
-           |                             ^
-           |                             |
-           |                  +----------+-----------+
-           |                  |                      |
-           |                  v                      v
-           |         +----------------------+  +----------------------+
-           |         |  encounter_location  |  |    encounter_ed      |
-           |         |----------------------|  |----------------------|
-           |         | encounter_id (FK)    |  | id (PK)              |
-           |         | location_id (FK)     |  | encounter_id (FK)    |
-           |         | start_date           |  | patient_id (FK)      |
-           |         | end_date             |  | organization_id (FK) |
-           |         +----------------------+  | ...                  |
-           |                                     +----------------------+
-           |
-           +----------------------------------------------+
-                                                          |
-                                                          v
-                                              +----------------------------+
-                                              | encounter_icu_location     |
-                                              |----------------------------|
-                                              | encounter_icu_id (FK)      |
-                                              | location_id (FK)           |
-                                              | start_date                 |
-                                              | end_date                   |
-                                              +----------------------------+
-
 +----------------------+
-|    encounter_icu    |
+|      medication      |
 |----------------------|
 | id (PK)              |
-| encounter_id (FK)    |
-| patient_id (FK)      |
+| code                 |
+| code_system          |
 | status               |
-| class_code           |
-| start_date           |
-| end_date             |
-| identifier           |
+| ndc                  |
+| formulary_drug_cd    |
+| name                 |
 +----------------------+
+
+Sem FK nesta fase:
+
+medication
+  -> sem vínculo direto com organization
+  -> sem vínculo direto com location
+  -> sem vínculo direto com patient
+  -> sem vínculo direto com encounter
 ```
 
-## Observações
+### 8) Visão Consolidada
 
-- `encounter_location` preserva múltiplas localizações associadas ao mesmo encounter.
-- `encounter.organization_id` usa preferencialmente `serviceProvider.reference`.
-- `encounter_ed.encounter_id` vem de `partOf.reference` e materializa a relação com o encounter-pai.
-- `encounter_icu.encounter_id` também vem de `partOf.reference`, mas `encounter_icu` não cria FK com `organization` porque esse vínculo não foi identificado no arquivo de origem.
-- `identifier[*].assigner.reference` aparece nos dados, mas não é materializado como coluna independente nesta fase.
+```text
+organization  <-- location
+      ^
+      |
+      +-- patient
+             ^
+             |
+             +-- encounter -- encounter_location -- location
+                    |
+                    +-- encounter_ed
+                    |
+                    +-- encounter_icu -- encounter_icu_location -- location
+
+medication  (dimensão independente nesta fase)
+```

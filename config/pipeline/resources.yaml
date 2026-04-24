@@ -5,3 +5,4 @@ execution_order:
   - encounter
   - encounter_ed
   - encounter_icu
+  - medication

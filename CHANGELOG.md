@@ -4,6 +4,51 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.8.0] - 2026-04-24
+
+### Adicionado
+
+- Início da terceira fase de ingestão com suporte ao arquivo `data/MimicMedication.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+  6. `EncounterICU`
+  7. `Medication`
+- Nova tabela principal `medication` com colunas simplificadas:
+  - `id`
+  - `code`
+  - `code_system`
+  - `status`
+  - `ndc`
+  - `formulary_drug_cd`
+  - `name`
+- Transformer e loader dedicados para `Medication`.
+- Testes de unidade para o transformer de `Medication`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com a documentação segmentada e a dimensão independente de `Medication`.
+- Atualização do `README.md` para documentar a terceira fase, a modelagem simplificada e os logs.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/medication.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `medication`.
+- Expansão do resumo final de ingestão para contemplar `Medication`.
+- Refatoração da orquestração principal para suportar a nova ordem completa sem acoplamento a nomes fixos de recursos.
+- Atualização da descrição do pacote para refletir a nova fase.
+
+### Corrigido
+
+- Consolidação explícita de `Medication.code.coding[*]` usando o primeiro valor não vazio e válido encontrado.
+- Consolidação explícita de identificadores de `Medication` por fragmento de `system`:
+  - `mimic-medication-ndc`
+  - `mimic-medication-formulary-drug-cd`
+  - `mimic-medication-name`
+- Preservação da decisão arquitetural de não criar foreign keys para `Medication` sem referência FHIR explícita no arquivo de origem.
+- Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
+
 ## [0.7.0] - 2026-04-23
 
 ### Adicionado

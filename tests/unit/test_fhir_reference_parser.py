@@ -32,11 +32,13 @@ def test_parse_fhir_reference_valid() -> None:
         ("Organization", "Organization", FhirReferenceParseError),
         ("Location/abc-123", "Patient", FhirReferenceParseError),
         ("Encounter/abc-123", "Organization", FhirReferenceParseError),
+        (None, "Organization", TypeError),
+        ("Organization/abc-123", None, TypeError),
     ],
 )
 def test_parse_fhir_reference_invalid_cases(
-    reference: str,
-    expected_resource_type: str,
+    reference: object,
+    expected_resource_type: object,
     expected_exception: type[Exception],
 ) -> None:
     """
