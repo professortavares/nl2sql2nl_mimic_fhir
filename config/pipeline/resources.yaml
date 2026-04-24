@@ -10,3 +10,4 @@ execution_order:
   - medication_request
   - specimen
   - condition
+  - condition_ed

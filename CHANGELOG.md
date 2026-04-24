@@ -4,6 +4,54 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.13.0] - 2026-04-24
+
+### Adicionado
+
+- Continuidade da quinta fase de ingestão com suporte ao arquivo `data/MimicConditionED.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+  6. `EncounterICU`
+  7. `Medication`
+  8. `MedicationMix`
+  9. `MedicationRequest`
+  10. `Specimen`
+  11. `Condition`
+  12. `ConditionED`
+- Nova tabela principal `condition_ed` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `condition_code`
+  - `condition_code_system`
+  - `condition_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+- Transformer, loader e pipeline dedicados para `ConditionED`.
+- Testes de unidade para o transformer e o loader de `ConditionED`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com a nova tabela e seus vínculos com `Patient` e `Encounter`.
+- Atualização do `README.md` para documentar a nova fase, a modelagem simplificada e os relacionamentos de `ConditionED`.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/condition_ed.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `condition_ed`.
+- Expansão do resumo final de ingestão para contemplar `ConditionED`.
+- Atualização da versão do pacote para refletir a nova etapa.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]` e `category[*].coding[*]`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter`.
+- Normalização de `condition_ed.patient_id` e `condition_ed.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado, preservando a ingestão e registrando o evento em log.
+- Preservação da estratégia explícita de manter a modelagem enxuta, sem tabelas auxiliares para `ConditionED`.
+
 ## [0.12.0] - 2026-04-24
 
 ### Adicionado

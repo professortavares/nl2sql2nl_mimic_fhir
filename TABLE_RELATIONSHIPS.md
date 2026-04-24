@@ -19,6 +19,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_request`
 - `specimen`
 - `condition`
+- `condition_ed`
 
 ## Foreign Keys
 
@@ -43,6 +44,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `specimen.patient_id -> patient.id`
 - `condition.patient_id -> patient.id`
 - `condition.encounter_id -> encounter.id`
+- `condition_ed.patient_id -> patient.id`
+- `condition_ed.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -398,7 +401,42 @@ medication
 +----------------------+
 ```
 
-### 12) Visão Consolidada
+### 12) ConditionED com Patient e Encounter
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | condition_ed.patient_id
+        |
++----------------+
+| condition_ed   |
+|----------------|
+| id (PK)        |
+| patient_id     |
+| encounter_id   |
+| condition_code |
+| condition_code_system |
+| condition_code_display|
+| category_code   |
+| category_system |
+| category_display|
++----------------+
+        |
+        | condition_ed.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 13) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -421,4 +459,6 @@ medication  <--- medication_mix_ingredient ---> medication_mix
 patient --- specimen
 
 patient --- condition --- encounter
+
+patient --- condition_ed --- encounter
 ```

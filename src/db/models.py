@@ -5,6 +5,8 @@ Modelos e contratos tipados de tabelas do schema de ingestão.
 from __future__ import annotations
 
 from src.db.schema import (
+    ConditionEDTables,
+    ConditionTables,
     EncounterEDTables,
     EncounterICUTables,
     EncounterTables,
@@ -16,7 +18,6 @@ from src.db.schema import (
     PatientTables,
     ProjectTables,
     SpecimenTables,
-    ConditionTables,
 )
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     "PatientTables",
     "SpecimenTables",
     "ConditionTables",
+    "ConditionEDTables",
     "ProjectTables",
 ]

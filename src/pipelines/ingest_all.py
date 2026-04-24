@@ -25,6 +25,7 @@ from src.ingestion.loaders.medication_loader import MedicationLoader
 from src.ingestion.loaders.medication_mix_loader import MedicationMixLoader
 from src.ingestion.loaders.medication_request_loader import MedicationRequestLoader
 from src.ingestion.loaders.condition_loader import ConditionLoader
+from src.ingestion.loaders.condition_ed_loader import ConditionEDLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -36,6 +37,7 @@ from src.pipelines.ingest_medication import MedicationIngestionPipeline
 from src.pipelines.ingest_medication_mix import MedicationMixIngestionPipeline
 from src.pipelines.ingest_medication_request import MedicationRequestIngestionPipeline
 from src.pipelines.ingest_condition import ConditionIngestionPipeline
+from src.pipelines.ingest_condition_ed import ConditionEDIngestionPipeline
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -83,6 +85,7 @@ class IngestAllPipeline:
             settings.medication_request.table_name,
             settings.specimen.table_name,
             settings.condition.table_name,
+            settings.condition_ed.table_name,
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -103,6 +106,11 @@ class IngestAllPipeline:
         )
         self._condition_loader = ConditionLoader(
             tables=tables.condition,
+            patient_tables=tables.patient,
+            encounter_tables=tables.encounter,
+        )
+        self._condition_ed_loader = ConditionEDLoader(
+            tables=tables.condition_ed,
             patient_tables=tables.patient,
             encounter_tables=tables.encounter,
         )
@@ -151,6 +159,10 @@ class IngestAllPipeline:
                 settings=settings,
                 loader=self._condition_loader,
             ),
+            "condition_ed": ConditionEDIngestionPipeline(
+                settings=settings,
+                loader=self._condition_ed_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -172,9 +184,10 @@ class IngestAllPipeline:
             "medication_request",
             "specimen",
             "condition",
+            "condition_ed",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed')."
             )
 
         started_at = perf_counter()

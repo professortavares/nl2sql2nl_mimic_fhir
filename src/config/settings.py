@@ -94,6 +94,7 @@ class ProjectSettings:
     medication_request: ResourceIngestionSettings
     specimen: ResourceIngestionSettings
     condition: ResourceIngestionSettings
+    condition_ed: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -280,6 +281,7 @@ def load_project_settings() -> ProjectSettings:
     medication_request_yaml = load_yaml_file(root / "config/ingestion/medication_request.yaml")
     specimen_yaml = load_yaml_file(root / "config/ingestion/specimen.yaml")
     condition_yaml = load_yaml_file(root / "config/ingestion/condition.yaml")
+    condition_ed_yaml = load_yaml_file(root / "config/ingestion/condition_ed.yaml")
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -392,6 +394,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/condition.yaml",
         root=root,
     )
+    condition_ed = _load_resource_settings(
+        condition_ed_yaml,
+        source=root / "config/ingestion/condition_ed.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -409,6 +416,7 @@ def load_project_settings() -> ProjectSettings:
         medication_request=medication_request,
         specimen=specimen,
         condition=condition,
+        condition_ed=condition_ed,
     )
 
 
