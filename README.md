@@ -50,6 +50,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 
 20. `MimicObservationChartevents.ndjson.gz`
 21. `MimicObservationDatetimeevents.ndjson.gz`
+22. `MimicObservationOutputevents.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -76,6 +77,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 21. ingestão de `ObservationMicroSusc`
 22. ingestão de `ObservationChartevents`
 23. ingestão de `ObservationDatetimeevents`
+24. ingestão de `ObservationOutputevents`
 
 ## Pré-requisitos
 
@@ -200,6 +202,10 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/observation_outputevents.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -254,6 +260,7 @@ python -m src.main
 - `observation_micro_susc`
 - `observation_chartevents`
 - `observation_datetimeevents`
+- `observation_outputevents`
 
 ### Organização, Location e Patient
 
@@ -443,6 +450,8 @@ Em `ObservationMicroSusc`, o código do antibiótico, a categoria e a interpreta
 Em `ObservationChartevents`, o código, a categoria, o valor numérico e o valor textual seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 Em `ObservationDatetimeevents`, o código, a categoria e o valor temporal seguem a mesma regra de consolidação por primeiro valor útil encontrado.
+
+Em `ObservationOutputevents`, o código, a categoria e o valor numérico seguem a mesma regra de consolidação por primeiro valor útil encontrado.
 
 ### Condition
 
@@ -693,6 +702,29 @@ Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto j
 
 Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
 
+### ObservationOutputevents
+
+`ObservationOutputevents` complementa a oitava fase com relacionamento para `Patient` e `Encounter`.
+
+- `observation_outputevents`
+  - `id` `PK`
+  - `patient_id` `FK -> patient.id` `nullable`
+  - `encounter_id` `FK -> encounter.id` `nullable`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+
+Se a referência de `Patient` ou `Encounter` não estiver presente no conjunto já carregado, o valor é normalizado para `NULL` e o evento é registrado em log para manter a ingestão resiliente.
+
 ### Specimen
 
 `Specimen` entra nesta fase com relacionamento para `Patient`.
@@ -755,6 +787,8 @@ Os relacionamentos atualmente materializados são:
 - `observation_chartevents.encounter_id -> encounter.id`
 - `observation_datetimeevents.patient_id -> patient.id`
 - `observation_datetimeevents.encounter_id -> encounter.id`
+- `observation_outputevents.patient_id -> patient.id`
+- `observation_outputevents.encounter_id -> encounter.id`
 
 ## Logging
 
@@ -794,7 +828,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents` e `ObservationDatetimeevents`
+  - transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication`, `MedicationMix`, `MedicationRequest`, `Specimen`, `Condition`, `ConditionED`, `Procedure`, `ProcedureED`, `ProcedureICU`, `ObservationLabevents`, `ObservationMicroTest`, `ObservationMicroOrg`, `ObservationMicroSusc`, `ObservationChartevents`, `ObservationDatetimeevents` e `ObservationOutputevents`
 
 ## Documentação Relacional
 

@@ -4,6 +4,44 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.23.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationOutputevents.ndjson.gz` como continuação da oitava fase de ingestão.
+- Nova tabela principal `observation_outputevents` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `observation_code`
+  - `observation_code_system`
+  - `observation_code_display`
+  - `category_code`
+  - `category_system`
+  - `issued_at`
+  - `effective_at`
+  - `value`
+  - `value_unit`
+  - `value_code`
+  - `value_system`
+- Transformer, loader e pipeline dedicados para `ObservationOutputevents`.
+- Testes de unidade para o transformer de `ObservationOutputevents`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationOutputevents` ao final.
+- Reestruturação do schema para incluir a tabela `observation_outputevents` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a manutenção do padrão de consolidação de listas.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `ObservationOutputevents`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_outputevents.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]` e `valueQuantity[*]` para `ObservationOutputevents`.
+- Consolidação explícita de `subject.reference` e `encounter.reference` com os tipos esperados `Patient` e `Encounter` para `ObservationOutputevents`.
+- Normalização de `observation_outputevents.patient_id` e `observation_outputevents.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.22.0] - 2026-04-24
 
 ### Adicionado

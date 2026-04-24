@@ -30,6 +30,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_micro_susc`
 - `observation_chartevents`
 - `observation_datetimeevents`
+- `observation_outputevents`
 
 ## Foreign Keys
 
@@ -76,6 +77,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_chartevents.encounter_id -> encounter.id`
 - `observation_datetimeevents.patient_id -> patient.id`
 - `observation_datetimeevents.encounter_id -> encounter.id`
+- `observation_outputevents.patient_id -> patient.id`
+- `observation_outputevents.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -790,7 +793,40 @@ medication
 +----------------+
 ```
 
-### 22) Visão Consolidada
+### 22) observationOutputevents com patient e encounter
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_outputevents.patient_id
+        |
++-----------------------------+
+| observation_outputevents    |
+|-----------------------------|
+| id (PK)                     |
+| patient_id                  |
+| encounter_id                |
+| observation_code            |
+| effective_at                |
+| value                       |
+| value_unit                  |
++-----------------------------+
+        |
+        | observation_outputevents.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 23) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -833,6 +869,8 @@ patient --- observation_micro_susc --- observation_micro_org
 patient --- observation_chartevents --- encounter
 
 patient --- observation_datetimeevents --- encounter
+
+patient --- observation_outputevents --- encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```
