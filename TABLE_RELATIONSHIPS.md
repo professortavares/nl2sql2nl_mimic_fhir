@@ -14,6 +14,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `encounter_icu`
 - `encounter_icu_location`
 - `medication`
+- `medication_mix`
+- `medication_mix_ingredient`
 
 ## Foreign Keys
 
@@ -30,6 +32,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `encounter_icu.patient_id -> patient.id`
 - `encounter_icu_location.encounter_icu_id -> encounter_icu.id`
 - `encounter_icu_location.location_id -> location.id`
+- `medication_mix_ingredient.medication_mix_id -> medication_mix.id`
+- `medication_mix_ingredient.medication_id -> medication.id`
 
 ## Diagramas Segmentados
 
@@ -242,7 +246,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 
 ### 7) Medication como dimensão independente
 
-`Medication` foi incluído nesta fase sem foreign keys diretas, porque o arquivo `MimicMedication.ndjson.gz` não mostrou referências FHIR explícitas e confiáveis para as demais entidades já ingeridas.
+`Medication` continua sem foreign keys diretas para os demais recursos clínicos nesta fase.
 
 ```text
 +----------------------+
@@ -266,7 +270,42 @@ medication
   -> sem vínculo direto com encounter
 ```
 
-### 8) Visão Consolidada
+### 8) MedicationMix e Medication
+
+```text
++----------------------+
+|    medication_mix    |
+|----------------------|
+| id (PK)              |
+| status               |
+| identifier           |
++----------------------+
+           |
+           |
+           v
++----------------------------+
+| medication_mix_ingredient  |
+|----------------------------|
+| medication_mix_id (FK)     |
+| medication_id (FK)         |
++----------------------------+
+           |
+           |
+           v
++----------------------+
+|      medication      |
+|----------------------|
+| id (PK)              |
+| code                 |
+| code_system          |
+| status               |
+| ndc                  |
+| formulary_drug_cd    |
+| name                 |
++----------------------+
+```
+
+### 9) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -281,5 +320,5 @@ organization  <-- location
                     |
                     +-- encounter_icu -- encounter_icu_location -- location
 
-medication  (dimensão independente nesta fase)
+medication  <--- medication_mix_ingredient ---> medication_mix
 ```

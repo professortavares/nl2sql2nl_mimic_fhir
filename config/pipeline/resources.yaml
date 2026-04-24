@@ -6,3 +6,4 @@ execution_order:
   - encounter_ed
   - encounter_icu
   - medication
+  - medication_mix

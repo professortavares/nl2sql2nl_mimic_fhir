@@ -21,6 +21,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 ### Fase 3
 
 7. `MimicMedication.ndjson.gz`
+8. `MimicMedicationMix.ndjson.gz`
 
 ### Ordem obrigatória da pipeline
 
@@ -33,6 +34,7 @@ O projeto trabalha em fases de ingestão. Cada execução faz `drop_and_recreate
 7. ingestão de `EncounterED`
 8. ingestão de `EncounterICU`
 9. ingestão de `Medication`
+10. ingestão de `MedicationMix`
 
 ## Pré-requisitos
 
@@ -99,6 +101,11 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/ingestion/medication_mix.yaml`
+  - caminho do arquivo
+  - batch size
+  - nome da tabela principal
+  - nome da tabela auxiliar de ingredientes
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
 
@@ -137,6 +144,8 @@ python -m src.main
 - `encounter_icu`
 - `encounter_icu_location`
 - `medication`
+- `medication_mix`
+- `medication_mix_ingredient`
 
 ### Organização, Location e Patient
 
@@ -227,7 +236,19 @@ python -m src.main
 
 Não foram observadas referências FHIR diretas confiáveis para `Patient`, `Encounter`, `Organization` ou `Location` no arquivo `MimicMedication.ndjson.gz`, então nenhuma FK nova é criada nesta fase.
 
-## Estratégia de Consolidação
+### MedicationMix
+
+`MedicationMix` se relaciona com `Medication` por meio dos ingredientes.
+
+- `medication_mix`
+  - `id` `PK`
+  - `status`
+  - `identifier`
+- `medication_mix_ingredient`
+  - `medication_mix_id` `FK -> medication_mix.id`
+  - `medication_id` `FK -> medication.id`
+
+### Estratégia de Consolidação
 
 Quando um recurso contém listas FHIR, a ingestão usa sempre o **primeiro valor não vazio e válido encontrado**.
 
@@ -243,6 +264,7 @@ Isso vale, por exemplo, para:
 - `hospitalization.dischargeDisposition.coding[*].code`
 - `code.coding[*].code`
 - `code.coding[*].system`
+- `ingredient[*].itemReference.reference`
 - identificadores de `Medication` filtrados por `system`
 
 Em `Medication`, os identificadores são consolidados por `system`:
@@ -250,6 +272,8 @@ Em `Medication`, os identificadores são consolidados por `system`:
 - `mimic-medication-ndc` -> `ndc`
 - `mimic-medication-formulary-drug-cd` -> `formulary_drug_cd`
 - `mimic-medication-name` -> `name`
+
+Em `MedicationMix`, o `identifier` é simplificado para o primeiro valor válido encontrado e os ingredientes são preservados em tabela auxiliar.
 
 ## Relacionamentos
 
@@ -268,6 +292,8 @@ Os relacionamentos atualmente materializados são:
 - `encounter_icu.patient_id -> patient.id`
 - `encounter_icu_location.encounter_icu_id -> encounter_icu.id`
 - `encounter_icu_location.location_id -> location.id`
+- `medication_mix_ingredient.medication_mix_id -> medication_mix.id`
+- `medication_mix_ingredient.medication_id -> medication.id`
 
 ## Logging
 
@@ -307,7 +333,7 @@ Os testes cobrem:
 
 - parser de referência FHIR
 - leitor NDJSON GZIP
-- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU` e `Medication`
+- transformers de `Organization`, `Location`, `Patient`, `Encounter`, `EncounterED`, `EncounterICU`, `Medication` e `MedicationMix`
 
 ## Documentação Relacional
 

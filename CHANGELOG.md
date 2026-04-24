@@ -4,6 +4,48 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.9.0] - 2026-04-24
+
+### Adicionado
+
+- Continuidade da terceira fase de ingestão com suporte ao arquivo `data/MimicMedicationMix.ndjson.gz`.
+- Pipeline orquestrada ampliada para a ordem obrigatória:
+  1. `Organization`
+  2. `Location`
+  3. `Patient`
+  4. `Encounter`
+  5. `EncounterED`
+  6. `EncounterICU`
+  7. `Medication`
+  8. `MedicationMix`
+- Nova tabela principal `medication_mix` com colunas simplificadas:
+  - `id`
+  - `status`
+  - `identifier`
+- Nova tabela auxiliar `medication_mix_ingredient` com FKs para:
+  - `medication_mix.id`
+  - `medication.id`
+- Transformer e loader dedicados para `MedicationMix`.
+- Testes de unidade para o transformer de `MedicationMix`.
+- Atualização do arquivo [`TABLE_RELATIONSHIPS.md`](TABLE_RELATIONSHIPS.md) com a dimensão independente de `Medication` e o relacionamento entre `MedicationMix` e `Medication`.
+- Atualização do `README.md` para documentar a nova fase, a modelagem simplificada e a relação via ingredientes.
+
+### Alterado
+
+- Ajuste da configuração YAML para incluir `config/ingestion/medication_mix.yaml`.
+- Atualização da ordem da pipeline em `config/pipeline/resources.yaml`.
+- Reestruturação do schema para incluir `medication_mix` e `medication_mix_ingredient`.
+- Expansão do resumo final de ingestão para contemplar `MedicationMix`.
+- Refatoração da orquestração principal para suportar a nova ordem completa sem acoplamento a nomes fixos de recursos.
+- Atualização da versão do pacote para refletir a nova etapa.
+
+### Corrigido
+
+- Consolidação explícita do primeiro identificador útil em `MedicationMix.identifier`.
+- Consolidação explícita de referências FHIR em `MedicationMix.ingredient[*].itemReference.reference` com o tipo esperado `Medication`.
+- Preservação da decisão arquitetural de manter `Medication` como dimensão independente nesta fase.
+- Manutenção da estratégia explícita de usar o primeiro valor não vazio e válido encontrado nas listas FHIR relevantes.
+
 ## [0.8.0] - 2026-04-24
 
 ### Adicionado
