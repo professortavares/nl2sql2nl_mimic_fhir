@@ -109,6 +109,7 @@ class ProjectSettings:
     observation_vital_signs_ed: ResourceIngestionSettings
     medication_dispense: ResourceIngestionSettings
     medication_dispense_ed: ResourceIngestionSettings
+    medication_administration: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -314,6 +315,9 @@ def load_project_settings() -> ProjectSettings:
     )
     medication_dispense_yaml = load_yaml_file(root / "config/ingestion/medication_dispense.yaml")
     medication_dispense_ed_yaml = load_yaml_file(root / "config/ingestion/medication_dispense_ed.yaml")
+    medication_administration_yaml = load_yaml_file(
+        root / "config/ingestion/medication_administration.yaml"
+    )
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -501,6 +505,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/medication_dispense_ed.yaml",
         root=root,
     )
+    medication_administration = _load_resource_settings(
+        medication_administration_yaml,
+        source=root / "config/ingestion/medication_administration.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -533,6 +542,7 @@ def load_project_settings() -> ProjectSettings:
         observation_vital_signs_ed=observation_vital_signs_ed,
         medication_dispense=medication_dispense,
         medication_dispense_ed=medication_dispense_ed,
+        medication_administration=medication_administration,
     )
 
 

@@ -25,3 +25,4 @@ execution_order:
   - observation_vital_signs_ed
   - medication_dispense
   - medication_dispense_ed
+  - medication_administration
