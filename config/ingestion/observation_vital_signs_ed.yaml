@@ -1,0 +1,5 @@
+pipeline_name: ingest_observation_vital_signs_ed
+input_path: data/MimicObservationVitalSignsED.ndjson.gz
+batch_size: 500
+table_name: observation_vital_signs_ed
+auxiliary_table_name: observation_vital_signs_ed_component

@@ -4,7 +4,8 @@ Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
 ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
 ObservationMicroOrg, ObservationMicroSusc, ObservationChartevents,
-ObservationDatetimeevents, ObservationOutputevents e ObservationED.
+ObservationDatetimeevents, ObservationOutputevents, ObservationED e
+ObservationVitalSignsED.
 """
 
 from __future__ import annotations
@@ -183,6 +184,14 @@ class ObservationEDTables:
 
 
 @dataclass(slots=True, frozen=True)
+class ObservationVitalSignsEDTables:
+    """Referência às tabelas de ObservationVitalSignsED."""
+
+    observation_vital_signs_ed: Table
+    observation_vital_signs_ed_component: Table
+
+
+@dataclass(slots=True, frozen=True)
 class ProjectTables:
     """Agrupa todas as tabelas do pipeline."""
 
@@ -209,6 +218,7 @@ class ProjectTables:
     observation_datetimeevents: ObservationDatetimeeventsTables
     observation_outputevents: ObservationOutputeventsTables
     observation_ed: ObservationEDTables
+    observation_vital_signs_ed: ObservationVitalSignsEDTables
 
 
 def validate_identifier(identifier: str, *, label: str) -> str:
@@ -273,6 +283,8 @@ def build_project_metadata(
     observation_datetimeevents_table_name: str,
     observation_outputevents_table_name: str,
     observation_ed_table_name: str,
+    observation_vital_signs_ed_table_name: str,
+    observation_vital_signs_ed_component_table_name: str,
 ) -> tuple[MetaData, ProjectTables]:
     """
     Constrói os metadados e as tabelas do schema relacional simplificado.
@@ -335,6 +347,10 @@ def build_project_metadata(
         Nome físico da tabela de ObservationOutputevents.
     observation_ed_table_name : str
         Nome físico da tabela de ObservationED.
+    observation_vital_signs_ed_table_name : str
+        Nome físico da tabela de ObservationVitalSignsED.
+    observation_vital_signs_ed_component_table_name : str
+        Nome físico da tabela auxiliar de components de ObservationVitalSignsED.
 
     Retorno:
     -------
@@ -399,6 +415,14 @@ def build_project_metadata(
     validate_identifier(
         observation_ed_table_name,
         label="observation_ed table",
+    )
+    validate_identifier(
+        observation_vital_signs_ed_table_name,
+        label="observation_vital_signs_ed table",
+    )
+    validate_identifier(
+        observation_vital_signs_ed_component_table_name,
+        label="observation_vital_signs_ed_component table",
     )
 
     metadata = MetaData(schema=schema_name)
@@ -1123,6 +1147,76 @@ def build_project_metadata(
     Index(f"ix_{observation_ed_table_name}_encounter_id", observation_ed.c.encounter_id)
     Index(f"ix_{observation_ed_table_name}_procedure_id", observation_ed.c.procedure_id)
 
+    observation_vital_signs_ed = Table(
+        observation_vital_signs_ed_table_name,
+        metadata,
+        Column("id", String(_FHIR_ID_MAX_LENGTH), primary_key=True),
+        Column(
+            "patient_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{patient_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "encounter_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column(
+            "procedure_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{procedure_table_name}.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        Column("status", String(50), nullable=True),
+        Column("observation_code", String(100), nullable=True),
+        Column("observation_code_system", Text(), nullable=True),
+        Column("observation_code_display", Text(), nullable=True),
+        Column("category_code", String(100), nullable=True),
+        Column("category_system", Text(), nullable=True),
+        Column("category_display", Text(), nullable=True),
+        Column("effective_at", String(40), nullable=True),
+        Column("value", String(100), nullable=True),
+        Column("value_unit", Text(), nullable=True),
+        Column("value_code", String(100), nullable=True),
+        Column("value_system", Text(), nullable=True),
+    )
+    Index(
+        f"ix_{observation_vital_signs_ed_table_name}_patient_id",
+        observation_vital_signs_ed.c.patient_id,
+    )
+    Index(
+        f"ix_{observation_vital_signs_ed_table_name}_encounter_id",
+        observation_vital_signs_ed.c.encounter_id,
+    )
+    Index(
+        f"ix_{observation_vital_signs_ed_table_name}_procedure_id",
+        observation_vital_signs_ed.c.procedure_id,
+    )
+
+    observation_vital_signs_ed_component = Table(
+        observation_vital_signs_ed_component_table_name,
+        metadata,
+        Column(
+            "observation_vital_signs_ed_id",
+            String(_FHIR_ID_MAX_LENGTH),
+            ForeignKey(f"{schema_name}.{observation_vital_signs_ed_table_name}.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        Column("component_code", String(100), nullable=True),
+        Column("component_code_system", Text(), nullable=True),
+        Column("component_code_display", Text(), nullable=True),
+        Column("value", String(100), nullable=True),
+        Column("value_unit", Text(), nullable=True),
+        Column("value_code", String(100), nullable=True),
+        Column("value_system", Text(), nullable=True),
+    )
+    Index(
+        "ix_observation_vital_signs_ed_component_obs_id",
+        observation_vital_signs_ed_component.c.observation_vital_signs_ed_id,
+    )
+
     return metadata, ProjectTables(
         organization=OrganizationTables(organization=organization),
         location=LocationTables(location=location),
@@ -1171,4 +1265,8 @@ def build_project_metadata(
             observation_outputevents=observation_outputevents,
         ),
         observation_ed=ObservationEDTables(observation_ed=observation_ed),
+        observation_vital_signs_ed=ObservationVitalSignsEDTables(
+            observation_vital_signs_ed=observation_vital_signs_ed,
+            observation_vital_signs_ed_component=observation_vital_signs_ed_component,
+        ),
     )

@@ -106,6 +106,7 @@ class ProjectSettings:
     observation_datetimeevents: ResourceIngestionSettings
     observation_outputevents: ResourceIngestionSettings
     observation_ed: ResourceIngestionSettings
+    observation_vital_signs_ed: ResourceIngestionSettings
 
 
 def project_root() -> Path:
@@ -306,6 +307,9 @@ def load_project_settings() -> ProjectSettings:
     )
     observation_outputevents_yaml = load_yaml_file(root / "config/ingestion/observation_outputevents.yaml")
     observation_ed_yaml = load_yaml_file(root / "config/ingestion/observation_ed.yaml")
+    observation_vital_signs_ed_yaml = load_yaml_file(
+        root / "config/ingestion/observation_vital_signs_ed.yaml"
+    )
 
     database = DatabaseSettings(
         host=_require_string(os.environ, "POSTGRES_HOST", source=root / ".env"),
@@ -478,6 +482,11 @@ def load_project_settings() -> ProjectSettings:
         source=root / "config/ingestion/observation_ed.yaml",
         root=root,
     )
+    observation_vital_signs_ed = _load_resource_settings(
+        observation_vital_signs_ed_yaml,
+        source=root / "config/ingestion/observation_vital_signs_ed.yaml",
+        root=root,
+    )
 
     return ProjectSettings(
         database=database,
@@ -507,6 +516,7 @@ def load_project_settings() -> ProjectSettings:
         observation_datetimeevents=observation_datetimeevents,
         observation_outputevents=observation_outputevents,
         observation_ed=observation_ed,
+        observation_vital_signs_ed=observation_vital_signs_ed,
     )
 
 

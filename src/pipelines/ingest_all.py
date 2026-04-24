@@ -4,7 +4,8 @@ Encounter, EncounterED, EncounterICU, Medication, MedicationMix,
 MedicationRequest, Specimen, Condition, ConditionED, Procedure,
 ProcedureED, ProcedureICU, ObservationLabevents, ObservationMicroTest,
 ObservationMicroOrg, ObservationMicroSusc, ObservationChartevents,
-ObservationDatetimeevents, ObservationOutputevents e ObservationED.
+ObservationDatetimeevents, ObservationOutputevents, ObservationED e
+ObservationVitalSignsED.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ from src.ingestion.loaders.observation_chartevents_loader import ObservationChar
 from src.ingestion.loaders.observation_datetimeevents_loader import ObservationDatetimeeventsLoader
 from src.ingestion.loaders.observation_outputevents_loader import ObservationOutputeventsLoader
 from src.ingestion.loaders.observation_ed_loader import ObservationEDLoader
+from src.ingestion.loaders.observation_vital_signs_ed_loader import ObservationVitalSignsEDLoader
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
@@ -65,6 +67,9 @@ from src.pipelines.ingest_observation_datetimeevents import (
 )
 from src.pipelines.ingest_observation_outputevents import ObservationOutputeventsIngestionPipeline
 from src.pipelines.ingest_observation_ed import ObservationEDIngestionPipeline
+from src.pipelines.ingest_observation_vital_signs_ed import (
+    ObservationVitalSignsEDIngestionPipeline,
+)
 from src.pipelines.ingest_specimen import SpecimenIngestionPipeline
 from src.pipelines.ingest_location import LocationIngestionPipeline
 from src.pipelines.ingest_organization import OrganizationIngestionPipeline
@@ -125,6 +130,9 @@ class IngestAllPipeline:
             settings.observation_datetimeevents.table_name,
             settings.observation_outputevents.table_name,
             settings.observation_ed.table_name,
+            settings.observation_vital_signs_ed.table_name,
+            settings.observation_vital_signs_ed.auxiliary_table_name
+            or "observation_vital_signs_ed_component",
         )
         self._metadata = metadata
         self._organization_loader = OrganizationLoader(tables.organization)
@@ -206,6 +214,12 @@ class IngestAllPipeline:
         )
         self._observation_ed_loader = ObservationEDLoader(
             tables=tables.observation_ed,
+            patient_tables=tables.patient,
+            encounter_tables=tables.encounter,
+            procedure_tables=tables.procedure,
+        )
+        self._observation_vital_signs_ed_loader = ObservationVitalSignsEDLoader(
+            tables=tables.observation_vital_signs_ed,
             patient_tables=tables.patient,
             encounter_tables=tables.encounter,
             procedure_tables=tables.procedure,
@@ -300,6 +314,10 @@ class IngestAllPipeline:
                 loader=self._observation_outputevents_loader,
             ),
             "observation_ed": ObservationEDIngestionPipeline(settings=settings, loader=self._observation_ed_loader),
+            "observation_vital_signs_ed": ObservationVitalSignsEDIngestionPipeline(
+                settings=settings,
+                loader=self._observation_vital_signs_ed_loader,
+            ),
         }
 
     def run(self) -> IngestionRunSummary:
@@ -333,9 +351,10 @@ class IngestAllPipeline:
             "observation_datetimeevents",
             "observation_outputevents",
             "observation_ed",
+            "observation_vital_signs_ed",
         ):
             raise ValueError(
-                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc', 'observation_chartevents', 'observation_datetimeevents', 'observation_outputevents', 'observation_ed')."
+                "A ordem de ingestão suportada deve ser ('organization', 'location', 'patient', 'encounter', 'encounter_ed', 'encounter_icu', 'medication', 'medication_mix', 'medication_request', 'specimen', 'condition', 'condition_ed', 'procedure', 'procedure_ed', 'procedure_icu', 'observation_labevents', 'observation_micro_test', 'observation_micro_org', 'observation_micro_susc', 'observation_chartevents', 'observation_datetimeevents', 'observation_outputevents', 'observation_ed', 'observation_vital_signs_ed')."
             )
 
         started_at = perf_counter()

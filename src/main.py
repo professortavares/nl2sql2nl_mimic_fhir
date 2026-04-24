@@ -18,7 +18,7 @@ def main() -> int:
     Specimen, Condition, ConditionED, Procedure, ProcedureED, ProcedureICU,
     ObservationLabevents, ObservationMicroTest, ObservationMicroOrg,
     ObservationMicroSusc, ObservationChartevents, ObservationDatetimeevents,
-    ObservationOutputevents e ObservationED.
+    ObservationOutputevents, ObservationED e ObservationVitalSignsED.
 
     Retorno:
     -------
