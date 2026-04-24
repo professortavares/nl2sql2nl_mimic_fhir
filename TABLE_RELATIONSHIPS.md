@@ -38,6 +38,7 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_dispense_ed`
 - `medication_administration`
 - `medication_administration_icu`
+- `medication_statement_ed`
 
 ## Foreign Keys
 
@@ -103,6 +104,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `medication_administration.medication_request_id -> medication_request.id`
 - `medication_administration_icu.patient_id -> patient.id`
 - `medication_administration_icu.encounter_id -> encounter.id`
+- `medication_statement_ed.patient_id -> patient.id`
+- `medication_statement_ed.encounter_id -> encounter.id`
 
 ## Diagramas Segmentados
 
@@ -534,6 +537,37 @@ medication
 +---------------------------------+
         |
         | medication_administration_icu.encounter_id
+        v
++----------------+
+|   encounter    |
+|----------------|
+| id (PK)        |
++----------------+
+```
+
+### 14) MedicationStatementED com patient e encounter
+
+```text
++----------------+
+|    patient     |
++----------------+
+        ^
+        |
+        | medication_statement_ed.patient_id
+        |
++---------------------------+
+| medication_statement_ed   |
+|---------------------------|
+| id (PK)                   |
+| patient_id                |
+| encounter_id              |
+| status                    |
+| date_asserted             |
+| medication_text           |
+| medication_code           |
++---------------------------+
+        |
+        | medication_statement_ed.encounter_id
         v
 +----------------+
 |   encounter    |
@@ -1157,6 +1191,8 @@ patient --- medication_dispense_ed --- encounter
 patient --- medication_administration --- medication_request / encounter
 
 patient --- medication_administration_icu --- encounter
+
+patient --- medication_statement_ed --- encounter
 
 observation_micro_org --- observation_micro_org_has_member
 ```

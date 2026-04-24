@@ -4,11 +4,43 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.30.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicMedicationStatementED.ndjson.gz` como fechamento da nona fase de ingestão.
+- Nova tabela principal `medication_statement_ed` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `encounter_id`
+  - `status`
+  - `date_asserted`
+  - `medication_text`
+  - `medication_code`
+  - `medication_code_system`
+  - `medication_code_display`
+- Transformer, loader e pipeline dedicados para `MedicationStatementED`.
+- Testes de unidade para o transformer de `MedicationStatementED`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `MedicationStatementED` ao final.
+- Reestruturação do schema para incluir a tabela `medication_statement_ed` e suas FKs para `patient` e `encounter`.
+- Atualização do `README.md` com a nova etapa, a modelagem simplificada e a observação de que não há FK para `Medication`.
+- Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `MedicationStatementED`.
+- Atualização da configuração YAML para incluir `config/ingestion/medication_statement_ed.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `medicationCodeableConcept.coding[*]` e `dateAsserted` para `MedicationStatementED`.
+- Consolidação explícita de `subject.reference` e `context.reference` com os tipos esperados `Patient` e `Encounter` para `MedicationStatementED`.
+- Normalização de `medication_statement_ed.patient_id` e `medication_statement_ed.encounter_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.29.0] - 2026-04-24
 
 ### Adicionado
 
-- Suporte ao arquivo `data/MimicMedicationAdministrationICU.ndjson.gz` como continuidade da nona e última fase de ingestão.
+- Suporte ao arquivo `data/MimicMedicationAdministrationICU.ndjson.gz` como continuação da nona fase de ingestão.
 - Nova tabela principal `medication_administration_icu` com colunas simplificadas:
   - `id`
   - `patient_id`
@@ -47,7 +79,7 @@ semântico `X.Y.Z`.
 
 ### Adicionado
 
-- Suporte ao arquivo `data/MimicMedicationAdministration.ndjson.gz` como continuação da nona e última fase de ingestão.
+- Suporte ao arquivo `data/MimicMedicationAdministration.ndjson.gz` como continuação da nona fase de ingestão.
 - Nova tabela principal `medication_administration` com colunas simplificadas:
   - `id`
   - `patient_id`
@@ -85,7 +117,7 @@ semântico `X.Y.Z`.
 
 ### Adicionado
 
-- Suporte ao arquivo `data/MimicMedicationDispenseED.ndjson.gz` como continuação da nona e última fase de ingestão.
+- Suporte ao arquivo `data/MimicMedicationDispenseED.ndjson.gz` como continuação da nona fase de ingestão.
 - Nova tabela principal `medication_dispense_ed` com colunas simplificadas:
   - `id`
   - `patient_id`
@@ -116,7 +148,7 @@ semântico `X.Y.Z`.
 
 ### Adicionado
 
-- Suporte ao arquivo `data/MimicMedicationDispense.ndjson.gz` como início da nona e última fase de ingestão.
+- Suporte ao arquivo `data/MimicMedicationDispense.ndjson.gz` como início da nona fase de ingestão.
 - Nova tabela principal `medication_dispense` com colunas simplificadas:
   - `id`
   - `patient_id`
@@ -135,7 +167,7 @@ semântico `X.Y.Z`.
 
 - Atualização da ordem obrigatória da pipeline para incluir `MedicationDispense` ao final.
 - Reestruturação do schema para incluir a tabela `medication_dispense` e suas FKs para `patient`, `encounter` e `medication_request`.
-- Atualização do `README.md` com a nona e última fase, a modelagem simplificada e a observação de que não há FK para `Medication`.
+- Atualização do `README.md` com a nona fase, a modelagem simplificada e a observação de que não há FK para `Medication`.
 - Atualização do `TABLE_RELATIONSHIPS.md` com o novo relacionamento de `MedicationDispense`.
 - Atualização da configuração YAML para incluir `config/ingestion/medication_dispense.yaml`.
 
