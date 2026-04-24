@@ -25,6 +25,8 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `procedure_icu`
 - `observation_labevents`
 - `observation_micro_test`
+- `observation_micro_org`
+- `observation_micro_org_has_member`
 
 ## Foreign Keys
 
@@ -62,6 +64,9 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 - `observation_micro_test.patient_id -> patient.id`
 - `observation_micro_test.specimen_id -> specimen.id`
 - `observation_micro_test.encounter_id -> encounter.id`
+- `observation_micro_org.patient_id -> patient.id`
+- `observation_micro_org.derived_from_observation_micro_test_id -> observation_micro_test.id`
+- `observation_micro_org_has_member.observation_micro_org_id -> observation_micro_org.id`
 
 ## Diagramas Segmentados
 
@@ -623,7 +628,59 @@ medication
 +----------------+
 ```
 
-### 18) Visão Consolidada
+### 18) observationMicroOrg com patient, observationMicroTest e hasMember
+
+```text
++----------------+
+|    patient     |
+|----------------|
+| id (PK)        |
++----------------+
+        ^
+        |
+        | observation_micro_org.patient_id
+        |
++--------------------------+
+| observation_micro_org    |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| derived_from_observation_micro_test_id |
+| organism_code            |
+| effective_at             |
+| value_string             |
++--------------------------+
+        |
+        | observation_micro_org.derived_from_observation_micro_test_id
+        v
++--------------------------+
+| observation_micro_test   |
+|--------------------------|
+| id (PK)                  |
+| patient_id               |
+| specimen_id              |
+| encounter_id             |
++--------------------------+
+
++--------------------------+
+| observation_micro_org    |
+|--------------------------|
+| id (PK)                  |
++--------------------------+
+        |
+        | observation_micro_org_has_member.observation_micro_org_id
+        v
++--------------------------------+
+| observation_micro_org_has_member|
+|--------------------------------|
+| observation_micro_org_id        |
+| member_observation_id           |
++--------------------------------+
+```
+
+`member_observation_id` ainda não possui FK nesta etapa porque pode apontar para observações microbiológicas futuras ainda não ingeridas.
+
+### 19) Visão Consolidada
 
 ```text
 organization  <-- location
@@ -658,4 +715,8 @@ patient --- procedure_icu --- encounter
 patient --- observation_labevents --- specimen
 
 patient --- observation_micro_test --- specimen / encounter
+
+patient --- observation_micro_org --- observation_micro_test
+
+observation_micro_org --- observation_micro_org_has_member
 ```

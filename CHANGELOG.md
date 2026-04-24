@@ -4,6 +4,43 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+## [0.19.0] - 2026-04-24
+
+### Adicionado
+
+- Suporte ao arquivo `data/MimicObservationMicroOrg.ndjson.gz` como continuação da sétima fase de ingestão.
+- Nova tabela principal `observation_micro_org` com colunas simplificadas:
+  - `id`
+  - `patient_id`
+  - `derived_from_observation_micro_test_id`
+  - `status`
+  - `organism_code`
+  - `organism_code_system`
+  - `organism_code_display`
+  - `category_code`
+  - `category_system`
+  - `category_display`
+  - `effective_at`
+  - `value_string`
+- Nova tabela auxiliar `observation_micro_org_has_member` para materializar `hasMember[*].reference`.
+- Transformer, loader e pipeline dedicados para `ObservationMicroOrg`.
+- Testes de unidade para o transformer de `ObservationMicroOrg`.
+
+### Alterado
+
+- Atualização da ordem obrigatória da pipeline para incluir `ObservationMicroOrg` ao final.
+- Reestruturação do schema para incluir a tabela `observation_micro_org`, sua tabela auxiliar `observation_micro_org_has_member` e as FKs para `patient` e `observation_micro_test`.
+- Atualização do parser de referências FHIR nos testes para cobrir `Observation/<id>`.
+- Atualização do `README.md` com a nova fase, a modelagem simplificada, a observação sobre `hasMember` sem FK nesta etapa e as instruções de execução e testes.
+- Atualização do `TABLE_RELATIONSHIPS.md` com os novos relacionamentos de `ObservationMicroOrg`.
+- Atualização da configuração YAML para incluir `config/ingestion/observation_micro_org.yaml`.
+
+### Corrigido
+
+- Consolidação explícita do primeiro valor não vazio e válido encontrado em `code.coding[*]`, `category[*].coding[*]`, `derivedFrom[*].reference` e `hasMember[*].reference` para `ObservationMicroOrg`.
+- Consolidação explícita de `subject.reference` e `derivedFrom[*].reference` com os tipos esperados `Patient` e `Observation` para `ObservationMicroOrg`.
+- Normalização de `observation_micro_org.patient_id` e `observation_micro_org.derived_from_observation_micro_test_id` para `NULL` quando as referências apontam para registros inexistentes no conjunto já carregado.
+
 ## [0.18.0] - 2026-04-24
 
 ### Adicionado
