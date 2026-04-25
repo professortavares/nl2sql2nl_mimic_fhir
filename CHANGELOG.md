@@ -4,6 +4,8 @@ Todas as alterações relevantes deste projeto são registradas neste arquivo.
 O formato segue uma linha próxima de `Keep a Changelog` e usa versionamento
 semântico `X.Y.Z`.
 
+> Observação: esta série de refatorações enxugou a modelagem relacional e removeu a maior parte das colunas `system` e equivalentes das tabelas finais.
+
 ## [0.30.0] - 2026-04-24
 
 ### Adicionado
@@ -17,7 +19,6 @@ semântico `X.Y.Z`.
   - `date_asserted`
   - `medication_text`
   - `medication_code`
-  - `medication_code_system`
   - `medication_code_display`
 - Transformer, loader e pipeline dedicados para `MedicationStatementED`.
 - Testes de unidade para o transformer de `MedicationStatementED`.
@@ -48,16 +49,12 @@ semântico `X.Y.Z`.
   - `status`
   - `effective_at`
   - `category_code`
-  - `category_system`
   - `medication_code`
-  - `medication_code_system`
   - `medication_code_display`
   - `dose_value`
   - `dose_unit`
   - `dose_code`
-  - `dose_system`
   - `method_code`
-  - `method_system`
 - Transformer, loader e pipeline dedicados para `MedicationAdministrationICU`.
 - Testes de unidade para o transformer de `MedicationAdministrationICU`.
 
@@ -88,14 +85,11 @@ semântico `X.Y.Z`.
   - `status`
   - `effective_at`
   - `medication_code`
-  - `medication_code_system`
   - `dosage_text`
   - `dose_value`
   - `dose_unit`
   - `dose_code`
-  - `dose_system`
   - `method_code`
-  - `method_system`
 - Transformer, loader e pipeline dedicados para `MedicationAdministration`.
 - Testes de unidade para o transformer de `MedicationAdministration`.
 
@@ -126,7 +120,6 @@ semântico `X.Y.Z`.
   - `when_handed_over`
   - `medication_text`
   - `medication_code`
-  - `medication_code_system`
 - Transformer, loader e pipeline dedicados para `MedicationDispenseED`.
 - Testes de unidade para o transformer de `MedicationDispenseED`.
 
@@ -157,7 +150,6 @@ semântico `X.Y.Z`.
   - `status`
   - `identifier`
   - `medication_code`
-  - `medication_code_system`
   - `route_code`
   - `frequency_code`
 - Transformer, loader e pipeline dedicados para `MedicationDispense`.
@@ -189,25 +181,20 @@ semântico `X.Y.Z`.
   - `procedure_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `value`
   - `value_unit`
   - `value_code`
-  - `value_system`
 - Nova tabela auxiliar `observation_vital_signs_ed_component` para os `component[*]` de sinais vitais compostos:
   - `observation_vital_signs_ed_id`
   - `component_code`
-  - `component_code_system`
   - `component_code_display`
   - `value`
   - `value_unit`
   - `value_code`
-  - `value_system`
 - Transformer, loader e pipeline dedicados para `ObservationVitalSignsED`.
 - Testes de unidade para o transformer de `ObservationVitalSignsED`.
 
@@ -237,15 +224,12 @@ semântico `X.Y.Z`.
   - `procedure_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `value_string`
   - `data_absent_reason_code`
-  - `data_absent_reason_system`
   - `data_absent_reason_display`
 - Transformer, loader e pipeline dedicados para `ObservationED`.
 - Testes de unidade para o transformer de `ObservationED`.
@@ -275,16 +259,13 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `issued_at`
   - `effective_at`
   - `value`
   - `value_unit`
   - `value_code`
-  - `value_system`
 - Transformer, loader e pipeline dedicados para `ObservationOutputevents`.
 - Testes de unidade para o transformer de `ObservationOutputevents`.
 
@@ -313,10 +294,8 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `issued_at`
   - `effective_at`
   - `value_datetime`
@@ -348,16 +327,13 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `issued_at`
   - `effective_at`
   - `value`
   - `value_unit`
   - `value_code`
-  - `value_system`
   - `value_string`
 - Transformer, loader e pipeline dedicados para `ObservationChartevents`.
 - Testes de unidade para o transformer de `ObservationChartevents`.
@@ -387,15 +363,12 @@ semântico `X.Y.Z`.
   - `derived_from_observation_micro_org_id`
   - `status`
   - `antibiotic_code`
-  - `antibiotic_code_system`
   - `antibiotic_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `identifier`
   - `interpretation_code`
-  - `interpretation_system`
   - `interpretation_display`
   - `dilution_value`
   - `dilution_comparator`
@@ -428,10 +401,8 @@ semântico `X.Y.Z`.
   - `derived_from_observation_micro_test_id`
   - `status`
   - `organism_code`
-  - `organism_code_system`
   - `organism_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `value_string`
@@ -466,15 +437,12 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `value_string`
   - `value_code`
-  - `value_code_system`
   - `value_code_display`
 - Transformer, loader e pipeline dedicados para `ObservationMicroTest`.
 - Testes de unidade para o transformer de `ObservationMicroTest`.
@@ -504,10 +472,8 @@ semântico `X.Y.Z`.
   - `specimen_id`
   - `status`
   - `observation_code`
-  - `observation_code_system`
   - `observation_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
   - `effective_at`
   - `issued_at`
@@ -515,7 +481,6 @@ semântico `X.Y.Z`.
   - `value`
   - `value_unit`
   - `value_code`
-  - `value_system`
   - `reference_low_value`
   - `reference_low_unit`
   - `reference_high_value`
@@ -551,10 +516,8 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `procedure_code`
-  - `procedure_code_system`
   - `procedure_code_display`
   - `category_code`
-  - `category_system`
   - `performed_start`
   - `performed_end`
 - Transformer, loader e pipeline dedicados para `ProcedureICU`.
@@ -585,7 +548,6 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `procedure_code`
-  - `procedure_code_system`
   - `procedure_code_display`
   - `performed_at`
 - Transformer, loader e pipeline dedicados para `ProcedureED`.
@@ -630,7 +592,6 @@ semântico `X.Y.Z`.
   - `encounter_id`
   - `status`
   - `procedure_code`
-  - `procedure_code_system`
   - `procedure_code_display`
   - `performed_at`
 - Transformer, loader e pipeline dedicados para `Procedure`.
@@ -676,10 +637,8 @@ semântico `X.Y.Z`.
   - `patient_id`
   - `encounter_id`
   - `condition_code`
-  - `condition_code_system`
   - `condition_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
 - Transformer, loader e pipeline dedicados para `ConditionED`.
 - Testes de unidade para o transformer e o loader de `ConditionED`.
@@ -723,10 +682,8 @@ semântico `X.Y.Z`.
   - `patient_id`
   - `encounter_id`
   - `condition_code`
-  - `condition_code_system`
   - `condition_code_display`
   - `category_code`
-  - `category_system`
   - `category_display`
 - Transformer, loader e pipeline dedicados para `Condition`.
 - Testes de unidade para o transformer e o loader de `Condition`.
@@ -768,7 +725,6 @@ semântico `X.Y.Z`.
   - `id`
   - `patient_id`
   - `specimen_type_code`
-  - `specimen_type_system`
   - `specimen_type_display`
   - `collected_at`
   - `identifier`
@@ -903,7 +859,6 @@ semântico `X.Y.Z`.
 - Nova tabela principal `medication` com colunas simplificadas:
   - `id`
   - `code`
-  - `code_system`
   - `status`
   - `ndc`
   - `formulary_drug_cd`
@@ -925,7 +880,6 @@ semântico `X.Y.Z`.
 ### Corrigido
 
 - Consolidação explícita de `Medication.code.coding[*]` usando o primeiro valor não vazio e válido encontrado.
-- Consolidação explícita de identificadores de `Medication` por fragmento de `system`:
   - `mimic-medication-ndc`
   - `mimic-medication-formulary-drug-cd`
   - `mimic-medication-name`

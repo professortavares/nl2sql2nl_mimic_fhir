@@ -3,6 +3,8 @@
 Este documento resume a modelagem relacional criada pela pipeline de ingestão.
 A leitura é segmentada em blocos menores para facilitar a navegação por relacionamento.
 
+Os diagramas abaixo mostram apenas as colunas persistidas nas tabelas finais; colunas `system` e equivalentes foram omitidas na maior parte dos casos para manter a modelagem enxuta.
+
 ## Tabelas Existentes
 
 - `organization`
@@ -326,7 +328,6 @@ A leitura é segmentada em blocos menores para facilitar a navegação por relac
 |----------------------|
 | id (PK)              |
 | code                 |
-| code_system          |
 | status               |
 | ndc                  |
 | formulary_drug_cd    |
@@ -369,7 +370,6 @@ medication
 |----------------------|
 | id (PK)              |
 | code                 |
-| code_system          |
 | status               |
 | ndc                  |
 | formulary_drug_cd    |
@@ -458,7 +458,6 @@ medication
 | when_handed_over         |
 | medication_text          |
 | medication_code          |
-| medication_code_system   |
 +--------------------------+
         |
         | medication_dispense_ed.encounter_id
@@ -594,7 +593,6 @@ medication
 | id (PK)              |
 | patient_id (FK)      |
 | specimen_type_code   |
-| specimen_type_system |
 | specimen_type_display|
 | collected_at        |
 | identifier          |
@@ -628,10 +626,8 @@ medication
 | patient_id (FK)      |
 | encounter_id (FK)    |
 | condition_code       |
-| condition_code_system|
 | condition_code_display|
 | category_code        |
-| category_system      |
 | category_display     |
 +----------------------+
 ```
@@ -655,10 +651,8 @@ medication
 | patient_id     |
 | encounter_id   |
 | condition_code |
-| condition_code_system |
 | condition_code_display|
 | category_code   |
-| category_system |
 | category_display|
 +----------------+
         |
@@ -1123,12 +1117,10 @@ medication
 |----------------------------------------|
 | observation_vital_signs_ed_id          |
 | component_code                         |
-| component_code_system                  |
 | component_code_display                 |
 | value                                  |
 | value_unit                             |
 | value_code                             |
-| value_system                           |
 +----------------------------------------+
 ```
 
