@@ -1,0 +1,3 @@
+schema_name: mimic_fhir_ingestion
+echo: false
+pool_pre_ping: true

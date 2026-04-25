@@ -1,0 +1,6 @@
+log_dir: logs
+log_file: ingestion.log
+level: INFO
+console_enabled: true
+max_bytes: 1048576
+backup_count: 3

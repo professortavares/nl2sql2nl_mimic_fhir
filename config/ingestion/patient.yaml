@@ -1,0 +1,4 @@
+pipeline_name: ingest_patient
+input_path: data/MimicPatient.ndjson.gz
+batch_size: 500
+table_name: patient

@@ -1,0 +1,4 @@
+pipeline_name: ingest_procedure_icu
+input_path: data/MimicProcedureICU.ndjson.gz
+batch_size: 500
+table_name: procedure_icu

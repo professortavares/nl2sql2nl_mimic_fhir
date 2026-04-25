@@ -1,0 +1,4 @@
+pipeline_name: ingest_observation_chartevents
+input_path: data/MimicObservationChartevents.ndjson.gz
+batch_size: 500
+table_name: observation_chartevents

@@ -1,0 +1,4 @@
+pipeline_name: ingest_condition
+input_path: data/MimicCondition.ndjson.gz
+batch_size: 500
+table_name: condition

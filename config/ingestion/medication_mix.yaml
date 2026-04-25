@@ -1,0 +1,5 @@
+pipeline_name: ingest_medication_mix
+input_path: data/MimicMedicationMix.ndjson.gz
+batch_size: 500
+table_name: medication_mix
+auxiliary_table_name: medication_mix_ingredient

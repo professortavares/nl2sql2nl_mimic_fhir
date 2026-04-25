@@ -1,0 +1,4 @@
+pipeline_name: ingest_organization
+input_path: data/MimicOrganization.ndjson.gz
+batch_size: 500
+table_name: organization

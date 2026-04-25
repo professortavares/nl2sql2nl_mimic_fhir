@@ -1,0 +1,55 @@
+"""
+Pipeline de ingestão do recurso FHIR MedicationAdministrationICU.
+"""
+
+from __future__ import annotations
+
+from sqlalchemy.engine import Connection
+
+from src.config.settings import ProjectSettings
+from src.ingestion.loaders.medication_administration_icu_loader import MedicationAdministrationICULoader
+from src.ingestion.readers.ndjson_gzip_reader import NdjsonGzipReader
+from src.ingestion.transformers.medication_administration_icu_transformer import (
+    MedicationAdministrationICUTransformer,
+)
+from src.pipelines.base_resource_pipeline import ResourceIngestionSummary, ingest_ndjson_resource
+
+
+class MedicationAdministrationICUIngestionPipeline:
+    """
+    Coordena leitura, transformação e persistência de MedicationAdministrationICU.
+    """
+
+    def __init__(self, settings: ProjectSettings, loader: MedicationAdministrationICULoader) -> None:
+        """
+        Inicializa o pipeline.
+        """
+
+        self._settings = settings.medication_administration_icu
+        self._common_settings = settings.common
+        self._loader = loader
+        self._reader = NdjsonGzipReader(self._settings.input_path)
+        self._transformer = MedicationAdministrationICUTransformer()
+
+    @property
+    def resource_name(self) -> str:
+        """
+        Retorna o nome lógico do recurso.
+        """
+
+        return "MedicationAdministrationICU"
+
+    def ingest(self, connection: Connection) -> ResourceIngestionSummary:
+        """
+        Executa a ingestão de MedicationAdministrationICU usando uma conexão já aberta.
+        """
+
+        return ingest_ndjson_resource(
+            connection=connection,
+            reader=self._reader,
+            transformer=self._transformer,
+            loader=self._loader,
+            batch_size=self._settings.batch_size or self._common_settings.batch_size,
+            skip_invalid_records=self._common_settings.skip_invalid_records,
+            resource_name=self.resource_name,
+        )

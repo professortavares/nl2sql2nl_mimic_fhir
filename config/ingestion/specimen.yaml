@@ -1,0 +1,4 @@
+pipeline_name: ingest_specimen
+input_path: data/MimicSpecimen.ndjson.gz
+batch_size: 500
+table_name: specimen

@@ -1,6 +1,10 @@
-def main():
-    print("Hello from nl2sql2nl-mimic-fhir!")
+"""
+Atalho compatível com `python main.py`.
+"""
+
+from src.main import main
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
+

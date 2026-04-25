@@ -1,0 +1,4 @@
+pipeline_name: ingest_location
+input_path: data/MimicLocation.ndjson.gz
+batch_size: 500
+table_name: location

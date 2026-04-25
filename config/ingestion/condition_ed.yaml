@@ -1,0 +1,4 @@
+pipeline_name: ingest_condition_ed
+input_path: data/MimicConditionED.ndjson.gz
+batch_size: 500
+table_name: condition_ed

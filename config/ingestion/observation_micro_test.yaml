@@ -1,0 +1,4 @@
+pipeline_name: ingest_observation_micro_test
+input_path: data/MimicObservationMicroTest.ndjson.gz
+batch_size: 500
+table_name: observation_micro_test
