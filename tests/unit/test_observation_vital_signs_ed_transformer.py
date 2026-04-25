@@ -86,27 +86,22 @@ def test_transform_observation_vital_signs_ed_with_full_payload() -> None:
         "procedure_id": "proc-1",
         "status": "final",
         "observation_code": "85354-9",
-        "observation_code_system": "http://loinc.org",
         "observation_code_display": "Blood pressure panel",
         "category_code": "vital-signs",
-        "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
         "category_display": "Vital Signs",
         "effective_at": "2024-01-01T08:00:00Z",
         "value": "120",
         "value_unit": "mm[Hg]",
         "value_code": "mm[Hg]",
-        "value_system": "http://unitsofmeasure.org",
     }
     assert result.observation_vital_signs_ed_components == [
         {
             "observation_vital_signs_ed_id": "obs-vital-ed-1",
             "component_code": "8480-6",
-            "component_code_system": "http://loinc.org",
             "component_code_display": "Systolic blood pressure",
             "value": "120",
             "value_unit": "mm[Hg]",
             "value_code": "mm[Hg]",
-            "value_system": "http://unitsofmeasure.org",
         }
     ]
 
@@ -205,8 +200,7 @@ def test_transform_observation_vital_signs_ed_without_value_quantity() -> None:
     assert result.observation_vital_signs_ed["value"] is None
     assert result.observation_vital_signs_ed["value_unit"] is None
     assert result.observation_vital_signs_ed["value_code"] is None
-    assert result.observation_vital_signs_ed["value_system"] is None
-
+    
 
 def test_transform_observation_vital_signs_ed_without_component() -> None:
     """
@@ -290,24 +284,19 @@ def test_transform_observation_vital_signs_ed_returns_only_simplified_columns() 
         "procedure_id",
         "status",
         "observation_code",
-        "observation_code_system",
         "observation_code_display",
         "category_code",
-        "category_system",
         "category_display",
         "effective_at",
         "value",
         "value_unit",
         "value_code",
-        "value_system",
     }
     assert set(result.observation_vital_signs_ed_components[0].keys()) == {
         "observation_vital_signs_ed_id",
         "component_code",
-        "component_code_system",
         "component_code_display",
         "value",
         "value_unit",
         "value_code",
-        "value_system",
     }

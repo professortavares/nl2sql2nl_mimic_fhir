@@ -61,17 +61,11 @@ class MedicationAdministrationTransformer:
             "status": first_non_empty_text(resource.get("status")),
             "effective_at": first_non_empty_text(resource.get("effectiveDateTime")),
             "medication_code": self._extract_medication_code(resource.get("medicationCodeableConcept"), "code"),
-            "medication_code_system": self._extract_medication_code(
-                resource.get("medicationCodeableConcept"),
-                "system",
-            ),
             "dosage_text": self._extract_dosage_text(resource.get("dosage")),
             "dose_value": self._extract_dosage_dose_value(resource.get("dosage"), "value"),
             "dose_unit": self._extract_dosage_dose_value(resource.get("dosage"), "unit"),
             "dose_code": self._extract_dosage_dose_value(resource.get("dosage"), "code"),
-            "dose_system": self._extract_dosage_dose_value(resource.get("dosage"), "system"),
             "method_code": self._extract_dosage_method_code(resource.get("dosage")),
-            "method_system": self._extract_dosage_method_system(resource.get("dosage")),
         }
 
     def _extract_reference_id(

@@ -78,16 +78,13 @@ def test_transform_observation_micro_susc_with_full_payload() -> None:
         "derived_from_observation_micro_org_id": "obs-org-1",
         "status": "final",
         "antibiotic_code": "ant-1",
-        "antibiotic_code_system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/antibiotic",
-        "antibiotic_code_display": "Vancomycin",
+                "antibiotic_code_display": "Vancomycin",
         "category_code": "microbiology",
-        "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
-        "category_display": "Microbiology",
+                "category_display": "Microbiology",
         "effective_at": "2024-01-01T08:00:00Z",
         "identifier": "susc-id-1",
         "interpretation_code": "S",
-        "interpretation_system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-        "interpretation_display": "Susceptible",
+                "interpretation_display": "Susceptible",
         "dilution_value": "2",
         "dilution_comparator": ">=",
         "note": "Isolado com leitura em disco.",
@@ -133,7 +130,6 @@ def test_transform_observation_micro_susc_without_value_codeable_concept() -> No
     )
 
     assert result["interpretation_code"] is None
-    assert result["interpretation_system"] is None
     assert result["interpretation_display"] is None
 
 
@@ -239,15 +235,12 @@ def test_transform_observation_micro_susc_returns_only_simplified_columns() -> N
         "derived_from_observation_micro_org_id",
         "status",
         "antibiotic_code",
-        "antibiotic_code_system",
         "antibiotic_code_display",
         "category_code",
-        "category_system",
         "category_display",
         "effective_at",
         "identifier",
         "interpretation_code",
-        "interpretation_system",
         "interpretation_display",
         "dilution_value",
         "dilution_comparator",

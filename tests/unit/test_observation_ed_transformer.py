@@ -71,7 +71,6 @@ def test_transform_observation_ed_with_value_string() -> None:
         "procedure_id": "proc-1",
         "status": "final",
         "observation_code": "1234-5",
-        "observation_code_system": "http://loinc.org",
         "observation_code_display": "ED observation",
         "category_code": "emergency",
         "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -79,7 +78,6 @@ def test_transform_observation_ed_with_value_string() -> None:
         "effective_at": "2024-01-01T08:00:00Z",
         "value_string": "patient stable",
         "data_absent_reason_code": "not-asked",
-        "data_absent_reason_system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
         "data_absent_reason_display": "Not Asked",
     }
 
@@ -243,7 +241,6 @@ def test_transform_observation_ed_returns_only_simplified_columns() -> None:
         "procedure_id",
         "status",
         "observation_code",
-        "observation_code_system",
         "observation_code_display",
         "category_code",
         "category_system",
@@ -251,6 +248,5 @@ def test_transform_observation_ed_returns_only_simplified_columns() -> None:
         "effective_at",
         "value_string",
         "data_absent_reason_code",
-        "data_absent_reason_system",
         "data_absent_reason_display",
     }

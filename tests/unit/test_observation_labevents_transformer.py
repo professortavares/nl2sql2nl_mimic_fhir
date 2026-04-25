@@ -78,19 +78,16 @@ def test_transform_observation_labevents_with_full_payload() -> None:
         "specimen_id": "spec-1",
         "status": "final",
         "observation_code": "59408-5",
-        "observation_code_system": "http://loinc.org",
-        "observation_code_display": "Oxygen saturation in Blood",
+                "observation_code_display": "Oxygen saturation in Blood",
         "category_code": "laboratory",
-        "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
-        "category_display": "Laboratory",
+                "category_display": "Laboratory",
         "effective_at": "2024-01-01T08:00:00Z",
         "issued_at": "2024-01-01T08:15:00Z",
         "identifier": "lab-id-1",
         "value": "98.7",
         "value_unit": "%",
         "value_code": "%",
-        "value_system": "http://unitsofmeasure.org",
-        "reference_low_value": "95",
+                "reference_low_value": "95",
         "reference_low_unit": "%",
         "reference_high_value": "100",
         "reference_high_unit": "%",
@@ -140,8 +137,7 @@ def test_transform_observation_labevents_without_value_quantity() -> None:
     assert result["value"] is None
     assert result["value_unit"] is None
     assert result["value_code"] is None
-    assert result["value_system"] is None
-
+    
 
 def test_transform_observation_labevents_without_reference_range() -> None:
     """
@@ -230,10 +226,8 @@ def test_transform_observation_labevents_returns_only_simplified_columns() -> No
         "specimen_id",
         "status",
         "observation_code",
-        "observation_code_system",
         "observation_code_display",
         "category_code",
-        "category_system",
         "category_display",
         "effective_at",
         "issued_at",
@@ -241,7 +235,6 @@ def test_transform_observation_labevents_returns_only_simplified_columns() -> No
         "value",
         "value_unit",
         "value_code",
-        "value_system",
         "reference_low_value",
         "reference_low_unit",
         "reference_high_value",

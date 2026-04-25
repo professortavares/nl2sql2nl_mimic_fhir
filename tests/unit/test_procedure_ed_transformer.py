@@ -46,8 +46,7 @@ def test_transform_procedure_ed_with_full_payload() -> None:
         "encounter_id": "enc-1",
         "status": "completed",
         "procedure_code": "12345",
-        "procedure_code_system": "http://www.ama-assn.org/go/cpt",
-        "procedure_code_display": "Procedure Example",
+                "procedure_code_display": "Procedure Example",
         "performed_at": "2024-01-01T08:00:00Z",
     }
 
@@ -90,7 +89,6 @@ def test_transform_procedure_ed_without_code() -> None:
     )
 
     assert result["procedure_code"] is None
-    assert result["procedure_code_system"] is None
     assert result["procedure_code_display"] is None
 
 
@@ -158,7 +156,6 @@ def test_transform_procedure_ed_returns_only_simplified_columns() -> None:
         "encounter_id",
         "status",
         "procedure_code",
-        "procedure_code_system",
         "procedure_code_display",
         "performed_at",
     }

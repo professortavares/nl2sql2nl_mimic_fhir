@@ -66,16 +66,13 @@ class ObservationVitalSignsEDTransformer:
             "procedure_id": self._extract_procedure_id(resource.get("partOf")),
             "status": first_non_empty_text(resource.get("status")),
             "observation_code": self._extract_coding_value(resource.get("code"), "code"),
-            "observation_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "observation_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
-            "category_system": self._extract_category_value(resource.get("category"), "system"),
             "category_display": self._extract_category_value(resource.get("category"), "display"),
             "effective_at": first_non_empty_text(resource.get("effectiveDateTime")),
             "value": self._extract_quantity_value(resource.get("valueQuantity"), "value"),
             "value_unit": self._extract_quantity_value(resource.get("valueQuantity"), "unit"),
             "value_code": self._extract_quantity_value(resource.get("valueQuantity"), "code"),
-            "value_system": self._extract_quantity_value(resource.get("valueQuantity"), "system"),
         }
         observation_vital_signs_ed_components = self._extract_component_rows(
             observation_id=observation_id,
@@ -229,12 +226,10 @@ class ObservationVitalSignsEDTransformer:
             row = {
                 "observation_vital_signs_ed_id": observation_id,
                 "component_code": self._extract_coding_value(item.get("code"), "code"),
-                "component_code_system": self._extract_coding_value(item.get("code"), "system"),
                 "component_code_display": self._extract_coding_value(item.get("code"), "display"),
                 "value": self._extract_quantity_value(item.get("valueQuantity"), "value"),
                 "value_unit": self._extract_quantity_value(item.get("valueQuantity"), "unit"),
                 "value_code": self._extract_quantity_value(item.get("valueQuantity"), "code"),
-                "value_system": self._extract_quantity_value(item.get("valueQuantity"), "system"),
             }
             if any(value is not None for key, value in row.items() if key != "observation_vital_signs_ed_id"):
                 rows.append(row)

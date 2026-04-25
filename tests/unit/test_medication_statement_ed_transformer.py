@@ -49,8 +49,7 @@ def test_transform_medication_statement_ed_with_full_payload() -> None:
         "date_asserted": "2024-01-01T08:00:00Z",
         "medication_text": "Paracetamol",
         "medication_code": "12345",
-        "medication_code_system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-        "medication_code_display": "Paracetamol 500mg",
+                "medication_code_display": "Paracetamol 500mg",
     }
 
 
@@ -110,7 +109,6 @@ def test_transform_medication_statement_ed_without_medication_codeable_concept()
 
     assert result["medication_text"] is None
     assert result["medication_code"] is None
-    assert result["medication_code_system"] is None
     assert result["medication_code_display"] is None
 
 
@@ -161,6 +159,5 @@ def test_transform_medication_statement_ed_returns_only_simplified_columns() -> 
         "date_asserted",
         "medication_text",
         "medication_code",
-        "medication_code_system",
         "medication_code_display",
     }

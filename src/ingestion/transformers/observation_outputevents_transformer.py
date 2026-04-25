@@ -54,16 +54,13 @@ class ObservationOutputeventsTransformer:
             ),
             "status": first_non_empty_text(resource.get("status")),
             "observation_code": self._extract_coding_value(resource.get("code"), "code"),
-            "observation_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "observation_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
-            "category_system": self._extract_category_value(resource.get("category"), "system"),
             "issued_at": first_non_empty_text(resource.get("issued")),
             "effective_at": first_non_empty_text(resource.get("effectiveDateTime")),
             "value": self._extract_quantity_value(resource.get("valueQuantity"), "value"),
             "value_unit": self._extract_quantity_value(resource.get("valueQuantity"), "unit"),
             "value_code": self._extract_quantity_value(resource.get("valueQuantity"), "code"),
-            "value_system": self._extract_quantity_value(resource.get("valueQuantity"), "system"),
         }
 
     def _extract_reference_id(

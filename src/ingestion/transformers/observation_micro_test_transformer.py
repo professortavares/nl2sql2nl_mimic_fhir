@@ -63,15 +63,12 @@ class ObservationMicroTestTransformer:
             ),
             "status": first_non_empty_text(resource.get("status")),
             "observation_code": self._extract_coding_value(resource.get("code"), "code"),
-            "observation_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "observation_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
-            "category_system": self._extract_category_value(resource.get("category"), "system"),
             "category_display": self._extract_category_value(resource.get("category"), "display"),
             "effective_at": first_non_empty_text(resource.get("effectiveDateTime")),
             "value_string": first_non_empty_text(resource.get("valueString")),
             "value_code": self._extract_value_codeable_concept(resource.get("valueCodeableConcept"), "code"),
-            "value_code_system": self._extract_value_codeable_concept(resource.get("valueCodeableConcept"), "system"),
             "value_code_display": self._extract_value_codeable_concept(resource.get("valueCodeableConcept"), "display"),
         }
 

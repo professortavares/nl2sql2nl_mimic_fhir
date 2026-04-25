@@ -55,10 +55,8 @@ def test_transform_condition_ed_with_full_payload() -> None:
         "patient_id": "pat-1",
         "encounter_id": "enc-1",
         "condition_code": "I10",
-        "condition_code_system": "http://hl7.org/fhir/sid/icd-10-cm",
         "condition_code_display": "Essential (primary) hypertension",
         "category_code": "problem-list-item",
-        "category_system": "http://terminology.hl7.org/CodeSystem/condition-category",
         "category_display": "Problem List Item",
     }
 
@@ -76,10 +74,8 @@ def test_transform_condition_ed_without_optional_fields() -> None:
         "patient_id": None,
         "encounter_id": None,
         "condition_code": None,
-        "condition_code_system": None,
         "condition_code_display": None,
         "category_code": None,
-        "category_system": None,
         "category_display": None,
     }
 
@@ -101,7 +97,6 @@ def test_transform_condition_ed_without_category() -> None:
     )
 
     assert result["category_code"] is None
-    assert result["category_system"] is None
     assert result["category_display"] is None
 
 
@@ -122,7 +117,6 @@ def test_transform_condition_ed_without_code() -> None:
     )
 
     assert result["condition_code"] is None
-    assert result["condition_code_system"] is None
     assert result["condition_code_display"] is None
 
 
@@ -168,9 +162,7 @@ def test_transform_condition_ed_returns_only_simplified_columns() -> None:
         "patient_id",
         "encounter_id",
         "condition_code",
-        "condition_code_system",
         "condition_code_display",
         "category_code",
-        "category_system",
         "category_display",
     }

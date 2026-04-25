@@ -45,8 +45,7 @@ def test_transform_medication_dispense_ed_with_full_payload() -> None:
         "when_handed_over": "2024-01-01T12:00:00Z",
         "medication_text": "Acetaminophen",
         "medication_code": "12345",
-        "medication_code_system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-    }
+            }
 
 
 def test_transform_medication_dispense_ed_without_context() -> None:
@@ -104,8 +103,7 @@ def test_transform_medication_dispense_ed_without_medication_codeable_concept() 
 
     assert result["medication_text"] is None
     assert result["medication_code"] is None
-    assert result["medication_code_system"] is None
-
+    
 
 @pytest.mark.parametrize(
     "field_name, reference_value, expected_message",
@@ -154,5 +152,4 @@ def test_transform_medication_dispense_ed_returns_only_simplified_columns() -> N
         "when_handed_over",
         "medication_text",
         "medication_code",
-        "medication_code_system",
     }

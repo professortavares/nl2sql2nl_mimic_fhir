@@ -59,11 +59,9 @@ def test_transform_observation_datetimeevents_with_value_datetime() -> None:
         "encounter_id": "enc-1",
         "status": "final",
         "observation_code": "1234-5",
-        "observation_code_system": "http://loinc.org",
-        "observation_code_display": "Encounter start",
+                "observation_code_display": "Encounter start",
         "category_code": "exam",
-        "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
-        "issued_at": "2024-01-01T08:01:00Z",
+                "issued_at": "2024-01-01T08:01:00Z",
         "effective_at": "2024-01-01T08:00:00Z",
         "value_datetime": "2024-01-01T08:05:00Z",
     }
@@ -108,8 +106,7 @@ def test_transform_observation_datetimeevents_without_category() -> None:
     )
 
     assert result["category_code"] is None
-    assert result["category_system"] is None
-
+    
 
 def test_transform_observation_datetimeevents_without_value_datetime() -> None:
     """
@@ -183,10 +180,8 @@ def test_transform_observation_datetimeevents_returns_only_simplified_columns() 
         "encounter_id",
         "status",
         "observation_code",
-        "observation_code_system",
         "observation_code_display",
         "category_code",
-        "category_system",
         "issued_at",
         "effective_at",
         "value_datetime",

@@ -53,7 +53,6 @@ def test_transform_medication_with_full_payload() -> None:
     assert result == {
         "id": "med-1",
         "code": "51079030020",
-        "code_system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-medication-ndc",
         "status": "active",
         "ndc": "51079030020",
         "formulary_drug_cd": "CATA2",
@@ -72,7 +71,6 @@ def test_transform_medication_with_optional_fields_missing() -> None:
     assert result == {
         "id": "med-1",
         "code": None,
-        "code_system": None,
         "status": None,
         "ndc": None,
         "formulary_drug_cd": None,
@@ -96,7 +94,6 @@ def test_transform_medication_with_empty_coding() -> None:
     )
 
     assert result["code"] is None
-    assert result["code_system"] is None
 
 
 def test_transform_medication_rejects_invalid_resource_type() -> None:
@@ -121,7 +118,6 @@ def test_transform_medication_returns_only_simplified_columns() -> None:
     assert set(result.keys()) == {
         "id",
         "code",
-        "code_system",
         "status",
         "ndc",
         "formulary_drug_cd",

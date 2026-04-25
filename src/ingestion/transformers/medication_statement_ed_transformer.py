@@ -55,10 +55,6 @@ class MedicationStatementEDTransformer:
             "date_asserted": first_non_empty_text(resource.get("dateAsserted")),
             "medication_text": self._extract_medication_text(resource.get("medicationCodeableConcept")),
             "medication_code": self._extract_medication_code(resource.get("medicationCodeableConcept"), "code"),
-            "medication_code_system": self._extract_medication_code(
-                resource.get("medicationCodeableConcept"),
-                "system",
-            ),
             "medication_code_display": self._extract_medication_code(
                 resource.get("medicationCodeableConcept"),
                 "display",

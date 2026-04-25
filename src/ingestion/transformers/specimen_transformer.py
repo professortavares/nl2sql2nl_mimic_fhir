@@ -26,8 +26,8 @@ class SpecimenTransformer:
     Converte recursos FHIR Specimen em um dicionário relacional enxuto.
 
     A transformação preserva apenas os campos analiticamente úteis:
-    `id`, `patient_id`, `specimen_type_code`, `specimen_type_system`,
-    `specimen_type_display`, `collected_at` e `identifier`.
+    `id`, `patient_id`, `specimen_type_code`, `specimen_type_display`,
+    `collected_at` e `identifier`.
     """
 
     def transform(self, resource: Mapping[str, Any]) -> dict[str, Any]:
@@ -68,7 +68,6 @@ class SpecimenTransformer:
             "id": specimen_id,
             "patient_id": self._extract_patient_id(resource.get("subject")),
             "specimen_type_code": self._extract_type_value(resource.get("type"), "code"),
-            "specimen_type_system": self._extract_type_value(resource.get("type"), "system"),
             "specimen_type_display": self._extract_type_value(resource.get("type"), "display"),
             "collected_at": self._extract_collected_at(resource.get("collection")),
             "identifier": self._extract_identifier(resource.get("identifier")),

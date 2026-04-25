@@ -55,11 +55,9 @@ def test_transform_procedure_icu_with_full_payload() -> None:
         "encounter_id": "enc-1",
         "status": "completed",
         "procedure_code": "12345",
-        "procedure_code_system": "http://www.ama-assn.org/go/cpt",
-        "procedure_code_display": "Procedure ICU Example",
+                "procedure_code_display": "Procedure ICU Example",
         "category_code": "inpatient",
-        "category_system": "http://terminology.hl7.org/CodeSystem/procedure-category",
-        "performed_start": "2024-01-01T08:00:00Z",
+                "performed_start": "2024-01-01T08:00:00Z",
         "performed_end": "2024-01-01T10:30:00Z",
     }
 
@@ -104,7 +102,6 @@ def test_transform_procedure_icu_without_code() -> None:
     )
 
     assert result["procedure_code"] is None
-    assert result["procedure_code_system"] is None
     assert result["procedure_code_display"] is None
 
 
@@ -127,8 +124,7 @@ def test_transform_procedure_icu_without_category() -> None:
     )
 
     assert result["category_code"] is None
-    assert result["category_system"] is None
-
+    
 
 def test_transform_procedure_icu_without_performed_period() -> None:
     """
@@ -196,10 +192,8 @@ def test_transform_procedure_icu_returns_only_simplified_columns() -> None:
         "encounter_id",
         "status",
         "procedure_code",
-        "procedure_code_system",
         "procedure_code_display",
         "category_code",
-        "category_system",
         "performed_start",
         "performed_end",
     }

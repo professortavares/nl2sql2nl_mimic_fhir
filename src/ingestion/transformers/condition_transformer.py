@@ -69,10 +69,8 @@ class ConditionTransformer:
             "patient_id": self._extract_reference_id(resource.get("subject"), _PATIENT_REFERENCE_TYPE),
             "encounter_id": self._extract_reference_id(resource.get("encounter"), _ENCOUNTER_REFERENCE_TYPE),
             "condition_code": self._extract_coding_value(resource.get("code"), "code"),
-            "condition_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "condition_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
-            "category_system": self._extract_category_value(resource.get("category"), "system"),
             "category_display": self._extract_category_value(resource.get("category"), "display"),
         }
 

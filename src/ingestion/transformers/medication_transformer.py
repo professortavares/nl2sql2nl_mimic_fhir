@@ -68,7 +68,6 @@ class MedicationTransformer:
         return {
             "id": medication_id,
             "code": self._extract_first_code(resource.get("code")),
-            "code_system": self._extract_first_code_system(resource.get("code")),
             "status": first_non_empty_text(resource.get("status")),
             "ndc": self._extract_identifier_by_system(resource.get("identifier"), _NDC_SYSTEM_FRAGMENT),
             "formulary_drug_cd": self._extract_identifier_by_system(

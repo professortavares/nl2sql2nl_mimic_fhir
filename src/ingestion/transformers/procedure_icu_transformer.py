@@ -78,10 +78,8 @@ class ProcedureICUTransformer:
             ),
             "status": first_non_empty_text(resource.get("status")),
             "procedure_code": self._extract_coding_value(resource.get("code"), "code"),
-            "procedure_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "procedure_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
-            "category_system": self._extract_category_value(resource.get("category"), "system"),
             "performed_start": self._extract_performed_period_value(resource.get("performedPeriod"), "start"),
             "performed_end": self._extract_performed_period_value(resource.get("performedPeriod"), "end"),
         }

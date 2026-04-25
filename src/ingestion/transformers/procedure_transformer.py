@@ -78,7 +78,6 @@ class ProcedureTransformer:
             ),
             "status": first_non_empty_text(resource.get("status")),
             "procedure_code": self._extract_coding_value(resource.get("code"), "code"),
-            "procedure_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "procedure_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "performed_at": first_non_empty_text(resource.get("performedDateTime")),
         }

@@ -53,10 +53,6 @@ class MedicationDispenseTransformer:
             "status": first_non_empty_text(resource.get("status")),
             "identifier": self._extract_identifier(resource.get("identifier")),
             "medication_code": self._extract_medication_code(resource.get("medicationCodeableConcept"), "code"),
-            "medication_code_system": self._extract_medication_code(
-                resource.get("medicationCodeableConcept"),
-                "system",
-            ),
             "route_code": self._extract_route_code(resource.get("dosageInstruction")),
             "frequency_code": self._extract_frequency_code(resource.get("dosageInstruction")),
         }

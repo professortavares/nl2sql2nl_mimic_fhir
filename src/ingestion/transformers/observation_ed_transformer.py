@@ -56,7 +56,6 @@ class ObservationEDTransformer:
             "procedure_id": self._extract_procedure_id(resource.get("partOf")),
             "status": first_non_empty_text(resource.get("status")),
             "observation_code": self._extract_coding_value(resource.get("code"), "code"),
-            "observation_code_system": self._extract_coding_value(resource.get("code"), "system"),
             "observation_code_display": self._extract_coding_value(resource.get("code"), "display"),
             "category_code": self._extract_category_value(resource.get("category"), "code"),
             "category_system": self._extract_category_value(resource.get("category"), "system"),
@@ -66,10 +65,6 @@ class ObservationEDTransformer:
             "data_absent_reason_code": self._extract_data_absent_reason_value(
                 resource.get("dataAbsentReason"),
                 "code",
-            ),
-            "data_absent_reason_system": self._extract_data_absent_reason_value(
-                resource.get("dataAbsentReason"),
-                "system",
             ),
             "data_absent_reason_display": self._extract_data_absent_reason_value(
                 resource.get("dataAbsentReason"),

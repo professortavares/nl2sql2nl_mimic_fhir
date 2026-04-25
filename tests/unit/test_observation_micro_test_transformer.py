@@ -61,16 +61,13 @@ def test_transform_observation_micro_test_with_full_payload() -> None:
         "encounter_id": "enc-1",
         "status": "final",
         "observation_code": "1234-5",
-        "observation_code_system": "http://loinc.org",
-        "observation_code_display": "Micro test code",
+                "observation_code_display": "Micro test code",
         "category_code": "laboratory",
-        "category_system": "http://terminology.hl7.org/CodeSystem/observation-category",
-        "category_display": "Laboratory",
+                "category_display": "Laboratory",
         "effective_at": "2024-01-01T08:00:00Z",
         "value_string": "positive",
         "value_code": None,
-        "value_code_system": None,
-        "value_code_display": None,
+                "value_code_display": None,
     }
 
 
@@ -104,7 +101,6 @@ def test_transform_observation_micro_test_with_value_codeable_concept() -> None:
 
     assert result["value_string"] is None
     assert result["value_code"] == "POS"
-    assert result["value_code_system"] == "http://terminology.hl7.org/CodeSystem/v2-0136"
     assert result["value_code_display"] == "Positive"
 
 
@@ -199,7 +195,6 @@ def test_transform_observation_micro_test_without_value_codeable_concept() -> No
     )
 
     assert result["value_code"] is None
-    assert result["value_code_system"] is None
     assert result["value_code_display"] is None
 
 
@@ -250,14 +245,11 @@ def test_transform_observation_micro_test_returns_only_simplified_columns() -> N
         "encounter_id",
         "status",
         "observation_code",
-        "observation_code_system",
         "observation_code_display",
         "category_code",
-        "category_system",
         "category_display",
         "effective_at",
         "value_string",
         "value_code",
-        "value_code_system",
         "value_code_display",
     }

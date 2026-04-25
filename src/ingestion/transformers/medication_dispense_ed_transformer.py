@@ -52,10 +52,6 @@ class MedicationDispenseEDTransformer:
             "when_handed_over": first_non_empty_text(resource.get("whenHandedOver")),
             "medication_text": self._extract_medication_text(resource.get("medicationCodeableConcept")),
             "medication_code": self._extract_medication_code(resource.get("medicationCodeableConcept"), "code"),
-            "medication_code_system": self._extract_medication_code(
-                resource.get("medicationCodeableConcept"),
-                "system",
-            ),
         }
 
     def _extract_reference_id(

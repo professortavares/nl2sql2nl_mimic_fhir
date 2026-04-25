@@ -60,8 +60,7 @@ def test_transform_medication_dispense_with_full_payload() -> None:
         "status": "completed",
         "identifier": "disp-123",
         "medication_code": "12345",
-        "medication_code_system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-        "route_code": "PO",
+                "route_code": "PO",
         "frequency_code": "BID",
     }
 
@@ -142,8 +141,7 @@ def test_transform_medication_dispense_without_medication_codeable_concept() -> 
     )
 
     assert result["medication_code"] is None
-    assert result["medication_code_system"] is None
-
+    
 
 @pytest.mark.parametrize(
     "field_name, reference_value, expected_message",
@@ -198,7 +196,6 @@ def test_transform_medication_dispense_returns_only_simplified_columns() -> None
         "status",
         "identifier",
         "medication_code",
-        "medication_code_system",
         "route_code",
         "frequency_code",
     }

@@ -56,17 +56,13 @@ def test_transform_medication_administration_icu_with_full_payload() -> None:
         "status": "completed",
         "effective_at": "2024-01-01T08:00:00Z",
         "category_code": "icu",
-        "category_system": "http://example.org/category",
-        "medication_code": "12345",
-        "medication_code_system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-        "medication_code_display": "Drug",
+                "medication_code": "12345",
+                "medication_code_display": "Drug",
         "dose_value": "2",
         "dose_unit": "mL",
         "dose_code": "mL",
-        "dose_system": "http://unitsofmeasure.org",
-        "method_code": "IV",
-        "method_system": "http://example.org/method",
-    }
+                "method_code": "IV",
+            }
 
 
 def test_transform_medication_administration_icu_without_context() -> None:
@@ -107,8 +103,7 @@ def test_transform_medication_administration_icu_without_category() -> None:
     )
 
     assert result["category_code"] is None
-    assert result["category_system"] is None
-
+    
 
 def test_transform_medication_administration_icu_without_dosage() -> None:
     """
@@ -149,7 +144,6 @@ def test_transform_medication_administration_icu_without_medication_codeable_con
     )
 
     assert result["medication_code"] is None
-    assert result["medication_code_system"] is None
     assert result["medication_code_display"] is None
 
 
@@ -200,14 +194,10 @@ def test_transform_medication_administration_icu_returns_only_simplified_columns
         "status",
         "effective_at",
         "category_code",
-        "category_system",
         "medication_code",
-        "medication_code_system",
         "medication_code_display",
         "dose_value",
         "dose_unit",
         "dose_code",
-        "dose_system",
         "method_code",
-        "method_system",
     }

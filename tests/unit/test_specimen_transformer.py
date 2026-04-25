@@ -46,7 +46,6 @@ def test_transform_specimen_with_full_payload() -> None:
         "id": "spec-1",
         "patient_id": "pat-1",
         "specimen_type_code": "BLD",
-        "specimen_type_system": "http://terminology.hl7.org/CodeSystem/v2-0487",
         "specimen_type_display": "Blood",
         "collected_at": "2024-01-01T08:00:00Z",
         "identifier": "spec-identifier",
@@ -65,7 +64,6 @@ def test_transform_specimen_without_optional_fields() -> None:
         "id": "spec-1",
         "patient_id": None,
         "specimen_type_code": None,
-        "specimen_type_system": None,
         "specimen_type_display": None,
         "collected_at": None,
         "identifier": None,
@@ -92,7 +90,6 @@ def test_transform_specimen_without_type() -> None:
     result = transformer.transform({"id": "spec-1", "resourceType": "Specimen", "subject": {"reference": "Patient/pat-1"}})
 
     assert result["specimen_type_code"] is None
-    assert result["specimen_type_system"] is None
     assert result["specimen_type_display"] is None
 
 
@@ -125,7 +122,6 @@ def test_transform_specimen_returns_only_simplified_columns() -> None:
         "id",
         "patient_id",
         "specimen_type_code",
-        "specimen_type_system",
         "specimen_type_display",
         "collected_at",
         "identifier",

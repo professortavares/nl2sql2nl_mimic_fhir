@@ -63,15 +63,12 @@ def test_transform_medication_administration_with_full_payload() -> None:
         "status": "completed",
         "effective_at": "2024-01-01T08:00:00Z",
         "medication_code": "12345",
-        "medication_code_system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-        "dosage_text": "Administrar 1 vez",
+                "dosage_text": "Administrar 1 vez",
         "dose_value": "2",
         "dose_unit": "mL",
         "dose_code": "mL",
-        "dose_system": "http://unitsofmeasure.org",
-        "method_code": "IV",
-        "method_system": "http://example.org/method",
-    }
+                "method_code": "IV",
+            }
 
 
 def test_transform_medication_administration_without_context() -> None:
@@ -135,10 +132,8 @@ def test_transform_medication_administration_without_dosage() -> None:
     assert result["dose_value"] is None
     assert result["dose_unit"] is None
     assert result["dose_code"] is None
-    assert result["dose_system"] is None
     assert result["method_code"] is None
-    assert result["method_system"] is None
-
+    
 
 def test_transform_medication_administration_without_medication_codeable_concept() -> None:
     """
@@ -158,8 +153,7 @@ def test_transform_medication_administration_without_medication_codeable_concept
     )
 
     assert result["medication_code"] is None
-    assert result["medication_code_system"] is None
-
+    
 
 @pytest.mark.parametrize(
     "field_name, reference_value, expected_message",
@@ -210,12 +204,9 @@ def test_transform_medication_administration_returns_only_simplified_columns() -
         "status",
         "effective_at",
         "medication_code",
-        "medication_code_system",
         "dosage_text",
         "dose_value",
         "dose_unit",
         "dose_code",
-        "dose_system",
         "method_code",
-        "method_system",
     }
