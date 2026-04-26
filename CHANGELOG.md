@@ -6,6 +6,24 @@ semântico `X.Y.Z`.
 
 > Observação: esta série de refatorações enxugou a modelagem relacional e removeu a maior parte das colunas `system` e equivalentes das tabelas finais.
 
+## [0.31.0] - 2026-04-26
+
+### Adicionado
+
+- Geração automática do dicionário de dados ao final de uma execução bem-sucedida da pipeline.
+- Criação automática da pasta `./dict` e do arquivo `./dict/dicionario.yaml`.
+- Novas configurações em `./config/dictionary/dictionary.yaml` para controlar a geração do YAML.
+- Novo arquivo `./config/dictionary/tables.yaml` para descrições humanas de tabelas e colunas.
+- Inclusão de exemplos reais por coluna com limite configurável.
+- Novo módulo `src/dictionary/data_dictionary_generator.py` para introspecção do schema e serialização em YAML.
+- Testes unitários para o gerador de dicionário de dados.
+
+### Alterado
+
+- Integração da geração do dicionário ao fluxo final da ingestão.
+- Atualização do `README.md` com a explicação do dicionário, o caminho do arquivo gerado, a estrutura do YAML e a configuração de descrições.
+- Atualização do `.gitignore` para ignorar o diretório gerado `dict/`.
+
 ## [0.30.0] - 2026-04-24
 
 ### Adicionado

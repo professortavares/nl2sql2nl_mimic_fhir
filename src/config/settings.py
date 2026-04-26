@@ -49,6 +49,18 @@ class LoggingSettings:
 
 
 @dataclass(slots=True, frozen=True)
+class DictionarySettings:
+    """Configuração da geração do dicionário de dados."""
+
+    enabled: bool
+    output_path: Path
+    descriptions_path: Path
+    include_examples: bool
+    max_examples_per_column: int
+    database_description: str
+
+
+@dataclass(slots=True, frozen=True)
 class CommonIngestionSettings:
     """Configurações compartilhadas entre as ingestões."""
 
@@ -81,6 +93,7 @@ class ProjectSettings:
 
     database: DatabaseSettings
     logging: LoggingSettings
+    dictionary: DictionarySettings
     common: CommonIngestionSettings
     resources: PipelineResourcesSettings
     organization: ResourceIngestionSettings
@@ -285,6 +298,7 @@ def load_project_settings() -> ProjectSettings:
 
     database_yaml = load_yaml_file(root / "config/database.yaml")
     logging_yaml = load_yaml_file(root / "config/logging.yaml")
+    dictionary_yaml = load_yaml_file(root / "config/dictionary/dictionary.yaml")
     common_yaml = load_yaml_file(root / "config/ingestion/common.yaml")
     resources_yaml = load_yaml_file(root / "config/pipeline/resources.yaml")
     organization_yaml = load_yaml_file(root / "config/ingestion/organization.yaml")
@@ -353,6 +367,43 @@ def load_project_settings() -> ProjectSettings:
         ),
         max_bytes=_require_int(logging_yaml, "max_bytes", source=root / "config/logging.yaml"),
         backup_count=_require_int(logging_yaml, "backup_count", source=root / "config/logging.yaml"),
+    )
+
+    dictionary_settings = DictionarySettings(
+        enabled=_require_bool(
+            dictionary_yaml,
+            "enabled",
+            default=True,
+            source=root / "config/dictionary/dictionary.yaml",
+        ),
+        output_path=_resolve_path(
+            root,
+            _require_string(dictionary_yaml, "output_path", source=root / "config/dictionary/dictionary.yaml"),
+        ),
+        descriptions_path=_resolve_path(
+            root,
+            _require_string(
+                dictionary_yaml,
+                "descriptions_path",
+                source=root / "config/dictionary/dictionary.yaml",
+            ),
+        ),
+        include_examples=_require_bool(
+            dictionary_yaml,
+            "include_examples",
+            default=True,
+            source=root / "config/dictionary/dictionary.yaml",
+        ),
+        max_examples_per_column=_require_int(
+            dictionary_yaml,
+            "max_examples_per_column",
+            source=root / "config/dictionary/dictionary.yaml",
+        ),
+        database_description=_require_string(
+            dictionary_yaml,
+            "database_description",
+            source=root / "config/dictionary/dictionary.yaml",
+        ),
     )
 
     common = CommonIngestionSettings(
@@ -530,6 +581,7 @@ def load_project_settings() -> ProjectSettings:
     return ProjectSettings(
         database=database,
         logging=logging_settings,
+        dictionary=dictionary_settings,
         common=common,
         resources=resources,
         organization=organization,

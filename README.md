@@ -254,8 +254,27 @@ As demais configurações não sensíveis ficam em YAML dentro de `./config`.
   - caminho do arquivo
   - batch size
   - nome da tabela
+- `config/dictionary/dictionary.yaml`
+  - habilita ou desabilita a geração
+  - caminho de saída do YAML gerado
+  - caminho das descrições manuais
+  - uso de exemplos reais
+  - quantidade máxima de exemplos por coluna
+  - descrição textual da base
+- `config/dictionary/tables.yaml`
+  - descrições humanas para tabelas e colunas
 - `config/pipeline/resources.yaml`
   - ordem oficial da pipeline
+
+## Dicionário de Dados
+
+Ao final de uma execução bem-sucedida da pipeline, o projeto gera automaticamente `./dict/dicionario.yaml`.
+
+- O arquivo é criado somente depois que o schema é recriado, os dados são ingeridos e a transação termina com sucesso.
+- Se a ingestão falhar, o dicionário não é gerado.
+- A estrutura do YAML segue o padrão `database -> tables -> columns`, com metadados de PK, FK, obrigatoriedade, tipos e exemplos.
+- As descrições humanas vêm de `./config/dictionary/tables.yaml` quando estiverem disponíveis.
+- Os exemplos de valores são extraídos dos dados realmente carregados no banco.
 
 ## Instalação
 
