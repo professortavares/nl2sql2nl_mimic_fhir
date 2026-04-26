@@ -5,12 +5,18 @@ Ponto de entrada da aplicação Streamlit.
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
 
-import streamlit as st
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.app.pages.individual_data import render_individual_data_tab
-from src.config.settings import load_project_settings
-from src.logging.logger import configure_logging
+import streamlit as st  # noqa: E402
+
+from src.app.pages.individual_data import render_individual_data_tab  # noqa: E402
+from src.config.settings import load_project_settings  # noqa: E402
+from src.logging.logger import configure_logging  # noqa: E402
 
 
 def main() -> None:
