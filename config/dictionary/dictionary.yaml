@@ -1,0 +1,6 @@
+enabled: true
+output_path: "./dict/dicionario.yaml"
+descriptions_path: "./config/dictionary/tables.yaml"
+include_examples: true
+max_examples_per_column: 3
+database_description: "Base relacional derivada de recursos FHIR MIMIC para uso em pipeline NL2SQL2NL."

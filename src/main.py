@@ -49,6 +49,7 @@ def main() -> int:
                 resource_summary.table_counts,
             )
 
+        pipeline.generate_data_dictionary()
         logger.info("Execução concluída com sucesso em %.2fs", summary.elapsed_seconds)
         return 0
     except Exception as exc:  # pragma: no cover - falha de CLI

@@ -20,9 +20,11 @@ from typing import Iterable
 from sqlalchemy.engine import Connection
 
 from src.config.settings import ProjectSettings
+from src.config.yaml_loader import load_yaml_file
 from src.db.connection import create_engine_from_settings
 from src.db.reset import reset_schema
 from src.db.schema import build_project_metadata
+from src.dictionary.data_dictionary_generator import generate_data_dictionary
 from src.ingestion.loaders.location_loader import LocationLoader
 from src.ingestion.loaders.encounter_loader import EncounterLoader
 from src.ingestion.loaders.encounter_ed_loader import EncounterEDLoader
@@ -463,6 +465,32 @@ class IngestAllPipeline:
         reset_schema(connection, self._settings.database.schema_name)
         self._metadata.create_all(connection)
         LOGGER.info("Schema resetado e tabelas criadas: %s", self._settings.database.schema_name)
+
+    def generate_data_dictionary(self) -> None:
+        """
+        Gera o dicionário de dados após uma ingestão bem-sucedida.
+        """
+
+        if not self._settings.dictionary.enabled:
+            LOGGER.info("Geração do dicionário desativada em %s", self._settings.dictionary.output_path)
+            return
+
+        descriptions_config = load_yaml_file(self._settings.dictionary.descriptions_path)
+        generation_config = {
+            "schema_name": self._settings.database.schema_name,
+            "database": {
+                "name": self._settings.database.database,
+                "description": self._settings.dictionary.database_description,
+            },
+            "tables": descriptions_config.get("tables", {}),
+            "include_examples": self._settings.dictionary.include_examples,
+            "max_examples_per_column": self._settings.dictionary.max_examples_per_column,
+        }
+        generate_data_dictionary(
+            self._settings.dictionary.output_path,
+            self._engine,
+            generation_config,
+        )
 
 
 def _merge_table_counts(counts: Iterable[dict[str, int]]) -> dict[str, int]:

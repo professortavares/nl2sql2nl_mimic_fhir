@@ -1,0 +1,113 @@
+tables:
+  organization:
+    description: Tabela de organizações prestadoras ou responsáveis pelos registros.
+    columns:
+      id: Identificador único da organização.
+      name: Nome exibido da organização.
+
+  location:
+    description: Tabela de locais físicos ou administrativos relacionados às organizações.
+    columns:
+      id: Identificador único do local.
+      name: Nome do local.
+      managing_organization_id: Organização responsável pelo local.
+
+  patient:
+    description: Tabela de pacientes com dados demográficos simplificados.
+    columns:
+      id: Identificador único do paciente.
+      gender: Gênero registrado do paciente.
+      birth_date: Data de nascimento do paciente.
+      name: Sobrenome ou nome familiar do paciente.
+      identifier: Identificador externo do paciente no FHIR/MIMIC.
+      race: Raça registrada do paciente.
+      ethnicity: Etnia registrada do paciente.
+      birthsex: Sexo atribuído ao nascimento.
+      managing_organization_id: Organização responsável pelo paciente.
+
+  encounter:
+    description: Tabela de encontros clínicos gerais.
+    columns:
+      id: Identificador único do encontro.
+      patient_id: Paciente associado ao encontro.
+      organization_id: Organização prestadora associada ao encontro.
+      status: Status do encontro.
+      class_code: Classe do encontro.
+      start_date: Data e hora de início do encontro.
+      end_date: Data e hora de fim do encontro.
+      identifier: Identificador externo do encontro.
+
+  medication_request:
+    description: Tabela de solicitações de medicação associadas ao paciente.
+    columns:
+      id: Identificador único da solicitação de medicação.
+      patient_id: Paciente associado à solicitação.
+      medication_id: Medicação prescrita.
+      status: Status da solicitação.
+
+  condition:
+    description: Tabela de condições clínicas observadas ou diagnosticadas.
+    columns:
+      id: Identificador único da condição.
+      patient_id: Paciente associado.
+      encounter_id: Encontro associado.
+      status: Status clínico da condição.
+
+  procedure:
+    description: Tabela de procedimentos clínicos realizados.
+    columns:
+      id: Identificador único do procedimento.
+      patient_id: Paciente associado.
+      encounter_id: Encontro associado.
+      status: Status do procedimento.
+
+  observation_labevents:
+    description: Tabela de observações laboratoriais derivadas de labevents.
+    columns:
+      id: Identificador único da observação laboratorial.
+      patient_id: Paciente associado.
+      specimen_id: Amostra relacionada, quando disponível.
+
+  observation_micro_test:
+    description: Tabela de observações de microbiologia relacionadas a testes.
+    columns:
+      id: Identificador único da observação microbiológica.
+      patient_id: Paciente associado.
+      specimen_id: Amostra relacionada, quando disponível.
+
+  observation_micro_org:
+    description: Tabela de organismos microbiológicos associados a observações.
+    columns:
+      id: Identificador único da observação microbiológica.
+      patient_id: Paciente associado.
+      observation_micro_test_id: Observação de teste microbiológico associada.
+
+  observation_micro_susc:
+    description: Tabela de suscetibilidade microbiológica associada a organismos.
+    columns:
+      id: Identificador único da suscetibilidade microbiológica.
+      patient_id: Paciente associado.
+      observation_micro_org_id: Organismo microbiológico associado.
+
+  medication_dispense:
+    description: Tabela de dispensações de medicação.
+    columns:
+      id: Identificador único da dispensação.
+      patient_id: Paciente associado.
+      encounter_id: Encontro associado.
+      medication_request_id: Solicitação de medicação relacionada.
+
+  medication_administration:
+    description: Tabela de administrações de medicação.
+    columns:
+      id: Identificador único da administração.
+      patient_id: Paciente associado.
+      encounter_id: Encontro associado.
+      medication_request_id: Solicitação de medicação relacionada.
+
+  medication_statement_ed:
+    description: Tabela de declarações de medicação em contexto de emergência.
+    columns:
+      id: Identificador único da declaração de medicação.
+      patient_id: Paciente associado.
+      encounter_id: Encontro associado.
