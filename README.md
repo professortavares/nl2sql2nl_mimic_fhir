@@ -276,6 +276,25 @@ Ao final de uma execução bem-sucedida da pipeline, o projeto gera automaticame
 - As descrições humanas vêm de `./config/dictionary/tables.yaml` quando estiverem disponíveis.
 - Os exemplos de valores são extraídos dos dados realmente carregados no banco.
 
+## Interface Streamlit
+
+A aplicação web permite explorar um paciente por vez em uma timeline clínica cronológica.
+
+Execute com:
+
+```bash
+uv run streamlit run src/app/streamlit_app.py
+```
+
+Nesta primeira entrega:
+
+- a aba `Dados individuais` está funcional
+- as abas `Dados populacionais` e `Chat` aparecem como placeholders
+- o usuário deve informar um `patient_id` no campo de busca para carregar a timeline
+- o topo da tela mostra a identificação do paciente e abaixo aparecem os `encounters` em ordem cronológica
+
+As seções exibidas dentro de cada encounter incluem diagnósticos, procedimentos, medicações, laboratório, microbiologia, observações charted e specimens, quando houver dados.
+
 ## Instalação
 
 Instale as dependências com:

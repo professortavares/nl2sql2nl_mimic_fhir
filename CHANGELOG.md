@@ -6,6 +6,19 @@ semântico `X.Y.Z`.
 
 > Observação: esta série de refatorações enxugou a modelagem relacional e removeu a maior parte das colunas `system` e equivalentes das tabelas finais.
 
+## [0.32.0] - 2026-04-26
+
+### Adicionado
+
+- Aplicação Streamlit para exploração de pacientes individuais.
+- Aba `Dados individuais` com busca por `patient_id` e exibição de timeline clínica cronológica.
+- Camada separada de serviços e repositórios para montagem da timeline.
+- Testes unitários para o serviço de timeline clínica.
+
+### Alterado
+
+- Atualização do `README.md` com instruções de execução da interface Streamlit e descrição das abas.
+
 ## [0.31.0] - 2026-04-26
 
 ### Adicionado
