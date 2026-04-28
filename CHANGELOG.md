@@ -12,12 +12,13 @@ semântico `X.Y.Z`.
 
 - Aplicação Streamlit para exploração de pacientes individuais.
 - Aba `Dados individuais` com busca por `patient_id` e exibição de timeline clínica cronológica.
+- Organização da timeline por contexto assistencial: `General Hospital`, `Emergency Department (ED)` e `Intensive Care Unit (ICU)`.
 - Camada separada de serviços e repositórios para montagem da timeline.
 - Testes unitários para o serviço de timeline clínica.
 
 ### Alterado
 
-- Atualização do `README.md` com instruções de execução da interface Streamlit e descrição das abas.
+- Atualização do `README.md` com instruções de execução da interface Streamlit, descrição da aba `Dados individuais` e organização clínica por contexto do MIMIC-IV.
 
 ## [0.31.0] - 2026-04-26
 
