@@ -49,37 +49,37 @@ def render_individual_data_tab(settings: ProjectSettings) -> None:
     Renderiza a aba de dados individuais.
     """
 
-    st.subheader("Dados individuais")
-    st.write("Informe um `patient_id` para consultar a timeline clínica cronológica.")
+    st.subheader("Individual Data")
+    st.write("Enter a `patient_id` to view the chronological clinical timeline.")
 
     patient_id = st.text_input("Patient ID", placeholder="Patient ID: <uuid>")
-    search_clicked = st.button("Buscar paciente", type="primary")
+    search_clicked = st.button("Search patient", type="primary")
 
     if not search_clicked:
-        st.caption("Use o campo acima para iniciar a busca.")
+        st.caption("Use the field above to start the search.")
         return
 
     normalized_patient_id = patient_id.strip()
     if not normalized_patient_id:
-        st.warning("Informe um `patient_id` antes de buscar.")
+        st.warning("Please enter a `patient_id` before searching.")
         return
 
-    LOGGER.info("Busca iniciada na interface para patient_id=%s", normalized_patient_id)
+    LOGGER.info("Search started in the interface for patient_id=%s", normalized_patient_id)
 
     try:
-        with st.spinner("Montando timeline do paciente..."):
+        with st.spinner("Building the patient's timeline..."):
             timeline = load_patient_timeline(settings, normalized_patient_id)
     except PatientNotFoundError:
-        st.warning("Paciente não encontrado.")
+        st.warning("Patient not found.")
         return
     except TimelineQueryError as exc:
-        LOGGER.exception("Erro ao montar timeline para patient_id=%s", normalized_patient_id)
-        st.error("Não foi possível consultar a timeline do paciente.")
+        LOGGER.exception("Error while building the timeline for patient_id=%s", normalized_patient_id)
+        st.error("Unable to query the patient's timeline.")
         st.caption(str(exc))
         return
     except Exception as exc:  # pragma: no cover - proteção de UI
-        LOGGER.exception("Falha inesperada na interface para patient_id=%s", normalized_patient_id)
-        st.error("Ocorreu um erro inesperado ao consultar o paciente.")
+        LOGGER.exception("Unexpected interface error for patient_id=%s", normalized_patient_id)
+        st.error("An unexpected error occurred while querying the patient.")
         st.caption(str(exc))
         return
 
@@ -92,18 +92,18 @@ def _render_patient_summary(patient) -> None:
     Exibe o cartão-resumo do paciente.
     """
 
-    st.markdown("### Identificação do paciente")
+    st.markdown("### Patient identification")
     columns = st.columns(2)
     left_items = [
         ("Patient ID", patient.id),
-        ("Nome", patient.name),
-        ("Gênero", patient.gender),
-        ("Data de nascimento", patient.birth_date),
+        ("Name", patient.name),
+        ("Gender", patient.gender),
+        ("Date of birth", patient.birth_date),
         ("Identifier", patient.identifier),
     ]
     right_items = [
-        ("Raça", patient.race),
-        ("Etnia", patient.ethnicity),
+        ("Race", patient.race),
+        ("Ethnicity", patient.ethnicity),
         ("Birth sex", patient.birthsex),
         ("Organization ID", patient.managing_organization_id),
         ("Organization", patient.managing_organization_name),
@@ -117,9 +117,9 @@ def _render_timeline(encounters: Sequence[EncounterTimeline]) -> None:
     Exibe a timeline vertical dos encounters.
     """
 
-    st.markdown("### Timeline de encounters")
+    st.markdown("### Encounter timeline")
     if not encounters:
-        st.info("Nenhum encounter encontrado para este paciente.")
+        st.info("No encounters found for this patient.")
         return
 
     for encounter in encounters:
@@ -143,18 +143,18 @@ def _render_general_hospital_context(context: dict[str, Any]) -> None:
         st.info("Nenhum dado encontrado para este contexto.")
         return
 
-    _render_section("Informações da hospitalização", context.get("hospitalization"), mode="single")
-    _render_section("Diagnósticos", context.get("diagnoses"))
-    _render_section("Procedimentos gerais", context.get("procedures"))
+    _render_section("Hospitalization information", context.get("hospitalization"), mode="single")
+    _render_section("Diagnoses", context.get("diagnoses"))
+    _render_section("General procedures", context.get("procedures"))
     medications = context.get("medications") or {}
-    _render_section("Pedidos de medicação", medications.get("pedidos_de_medicacao"))
-    _render_section("Dispensações", medications.get("dispensacoes"))
-    _render_section("Administrações", medications.get("administracoes"))
-    _render_section("Exames laboratoriais", context.get("labs"))
+    _render_section("Medication requests", medications.get("pedidos_de_medicacao"))
+    _render_section("Dispenses", medications.get("dispensacoes"))
+    _render_section("Administrations", medications.get("administracoes"))
+    _render_section("Lab tests", context.get("labs"))
     microbiology = context.get("microbiology") or {}
-    _render_section("Testes microbiológicos", microbiology.get("testes"))
-    _render_section("Organismos identificados", microbiology.get("organismos"))
-    _render_section("Susceptibilidades", microbiology.get("susceptibilidades"))
+    _render_section("Microbiology tests", microbiology.get("testes"))
+    _render_section("Identified organisms", microbiology.get("organismos"))
+    _render_section("Susceptibilities", microbiology.get("susceptibilidades"))
     _render_section("Specimens", context.get("specimens"))
 
 
@@ -167,14 +167,14 @@ def _render_emergency_department_context(context: dict[str, Any]) -> None:
         st.info("Nenhum dado encontrado para este contexto.")
         return
 
-    _render_section("Informações da permanência no ED", context.get("stay"), mode="single")
-    _render_section("Diagnósticos ED", context.get("diagnoses"))
-    _render_section("Procedimentos ED", context.get("procedures"))
-    _render_section("Observações da emergência", context.get("observations"))
+    _render_section("ED stay information", context.get("stay"), mode="single")
+    _render_section("ED diagnoses", context.get("diagnoses"))
+    _render_section("ED procedures", context.get("procedures"))
+    _render_section("Emergency observations", context.get("observations"))
     _render_vital_signs_section(context.get("vital_signs") or [])
     medications = context.get("medications") or {}
-    _render_section("Dispensações de medicamentos", medications.get("dispensacoes_ed"))
-    _render_section("Declarações de medicação", medications.get("medication_statements_ed"))
+    _render_section("Medication dispenses", medications.get("dispensacoes_ed"))
+    _render_section("Medication statements", medications.get("medication_statements_ed"))
 
 
 def _render_icu_context(context: dict[str, Any]) -> None:
@@ -186,12 +186,12 @@ def _render_icu_context(context: dict[str, Any]) -> None:
         st.info("Nenhum dado encontrado para este contexto.")
         return
 
-    _render_section("Informações da permanência na ICU", context.get("stay"), mode="single")
-    _render_section("Procedimentos ICU", context.get("procedures"))
-    _render_section("Administrações de medicação ICU", context.get("medications"))
-    _render_section("Eventos charted", context.get("charted_events"))
-    _render_section("Eventos de saída", context.get("output_events"))
-    _render_section("Eventos data/hora", context.get("datetime_events"))
+    _render_section("ICU stay information", context.get("stay"), mode="single")
+    _render_section("ICU procedures", context.get("procedures"))
+    _render_section("ICU medication administrations", context.get("medications"))
+    _render_section("Charted events", context.get("charted_events"))
+    _render_section("Output events", context.get("output_events"))
+    _render_section("Date/time events", context.get("datetime_events"))
 
 
 def _render_vital_signs_section(rows: list[dict[str, Any]]) -> None:
@@ -200,14 +200,14 @@ def _render_vital_signs_section(rows: list[dict[str, Any]]) -> None:
     """
 
     if not rows:
-        st.caption("Nenhum registro encontrado.")
+        st.caption("No records found.")
         return
 
-    st.markdown("#### Sinais vitais ED")
+    st.markdown("#### ED vital signs")
     st.dataframe(_normalize_rows(rows), use_container_width=True, hide_index=True)
     components = _collect_components(rows)
     if components:
-        st.markdown("##### Componentes")
+        st.markdown("##### Components")
         st.dataframe(_normalize_rows(components), use_container_width=True, hide_index=True)
 
 
@@ -217,7 +217,7 @@ def _render_section(title: str, data: Any, *, mode: str = "table") -> None:
     """
 
     if not data:
-        st.caption("Nenhum registro encontrado.")
+        st.caption("No records found.")
         return
 
     st.markdown(f"#### {title}")
@@ -258,7 +258,7 @@ def _render_key_value_list(column, items: list[tuple[str, Any]]) -> None:
     with column:
         for label, value in items:
             st.markdown(f"**{label}**")
-            st.write(value if value not in (None, "") else "Não informado.")
+            st.write(value if value not in (None, "") else "Not provided.")
 
 
 def _build_encounter_title(encounter: EncounterTimeline) -> str:
@@ -266,18 +266,42 @@ def _build_encounter_title(encounter: EncounterTimeline) -> str:
     Monta o título de um expander de encounter.
     """
 
-    start_date = _format_display_value(encounter.summary.start_date) or "sem início"
-    end_date = _format_display_value(encounter.summary.end_date) or "em aberto"
-    class_code = _format_display_value(encounter.summary.class_code) or "sem class"
-    status = _format_display_value(encounter.summary.status) or "sem status"
+    start_date = _format_display_value(encounter.summary.start_date) or "no start date"
+    end_date = _format_display_value(encounter.summary.end_date) or "open-ended"
+    class_code = _format_display_value(encounter.summary.class_code) or "no class"
+    status = _format_display_value(encounter.summary.status) or "no status"
     encounter_id = encounter.summary.id[:8]
     return f"{start_date} → {end_date} | class {class_code} | {status} | {encounter_id}"
 
 
-def _friendly_section_name(section_name: str) -> str:
-    """Converte nomes técnicos em rótulos mais legíveis."""
+SECTION_LABELS = {
+    "administracoes": "Administrations",
+    "charted_events": "Charted Events",
+    "datetime_events": "Date/Time Events",
+    "diagnoses": "Diagnoses",
+    "dispensacoes": "Dispenses",
+    "dispensacoes_ed": "Medication Dispenses",
+    "hospitalization": "Hospitalization",
+    "labs": "Lab Tests",
+    "medication_statements_ed": "Medication Statements",
+    "medications": "Medications",
+    "observations": "Observations",
+    "organismos": "Identified Organisms",
+    "output_events": "Output Events",
+    "pedidos_de_medicacao": "Medication Requests",
+    "procedures": "Procedures",
+    "specimens": "Specimens",
+    "stay": "Stay",
+    "susceptibilidades": "Susceptibilities",
+    "testes": "Tests",
+    "vital_signs": "Vital Signs",
+}
 
-    return section_name.replace("_", " ").title()
+
+def _friendly_section_name(section_name: str) -> str:
+    """Converts technical names into friendlier labels."""
+
+    return SECTION_LABELS.get(section_name, section_name.replace("_", " ").title())
 
 
 def _normalize_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -166,15 +166,15 @@ class PatientTimelineService:
 
         normalized_patient_id = patient_id.strip()
         if not normalized_patient_id:
-            raise ValueError("Patient ID vazio.")
+            raise ValueError("Empty patient ID.")
 
         started_at = perf_counter()
-        LOGGER.info("Iniciando busca da timeline para patient_id=%s", normalized_patient_id)
+        LOGGER.info("Starting timeline lookup for patient_id=%s", normalized_patient_id)
 
         try:
             patient_row = self._repositories.patient_repository.fetch_patient(connection, normalized_patient_id)
             if patient_row is None:
-                raise PatientNotFoundError(f"Paciente não encontrado: {normalized_patient_id}")
+                raise PatientNotFoundError(f"Patient not found: {normalized_patient_id}")
 
             patient = _build_patient_profile(patient_row)
             encounter_rows = self._repositories.encounter_repository.list_by_patient_id(
@@ -183,7 +183,7 @@ class PatientTimelineService:
             )
             encounter_rows = sorted(encounter_rows, key=_encounter_sort_key)
             LOGGER.info(
-                "Encontrados %s encounters para patient_id=%s",
+                "Found %s encounters for patient_id=%s",
                 len(encounter_rows),
                 normalized_patient_id,
             )
@@ -197,7 +197,7 @@ class PatientTimelineService:
             ]
             result = TimelineBuildResult(patient=patient, encounters=encounters)
             LOGGER.info(
-                "Timeline montada para patient_id=%s em %.2fs com %s encounters",
+                "Timeline built for patient_id=%s in %.2fs with %s encounters",
                 normalized_patient_id,
                 perf_counter() - started_at,
                 len(encounters),
@@ -206,8 +206,8 @@ class PatientTimelineService:
         except PatientNotFoundError:
             raise
         except Exception as exc:
-            LOGGER.exception("Falha ao montar a timeline para patient_id=%s", normalized_patient_id)
-            raise TimelineQueryError("Não foi possível montar a timeline do paciente.") from exc
+            LOGGER.exception("Failed to build the timeline for patient_id=%s", normalized_patient_id)
+            raise TimelineQueryError("Unable to build the patient's timeline.") from exc
 
     def _build_encounter_timeline(
         self,
@@ -225,7 +225,7 @@ class PatientTimelineService:
         emergency_department = self._build_emergency_department_context(connection, patient, summary)
         icu = self._build_icu_context(connection, patient, summary)
         LOGGER.info(
-            "Contextos montados para encounter_id=%s: GH=%s ED=%s ICU=%s",
+            "Contexts built for encounter_id=%s: GH=%s ED=%s ICU=%s",
             summary.id,
             _count_context_events(general_hospital),
             _count_context_events(emergency_department),

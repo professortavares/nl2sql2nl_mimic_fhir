@@ -28,18 +28,18 @@ def main() -> None:
     settings = load_project_settings()
     configure_logging(settings.logging)
     logger = logging.getLogger(__name__)
-    logger.info("Aplicação Streamlit inicializada")
+    logger.info("Streamlit application initialized")
 
     st.title("NL2SQL2NL")
-    st.caption("Exploração clínica individual sobre a base PostgreSQL já ingerida.")
+    st.caption("Individual clinical exploration over the already ingested PostgreSQL dataset.")
 
-    tabs = st.tabs(["Dados individuais", "Dados populacionais", "Chat"])
+    tabs = st.tabs(["Individual data", "Population data", "Chat"])
     with tabs[0]:
         render_individual_data_tab(settings)
     with tabs[1]:
-        st.info("Aba em construção: Dados populacionais / BI.")
+        st.info("Tab under construction: Population data / BI.")
     with tabs[2]:
-        st.info("Aba em construção: Chat.")
+        st.info("Tab under construction: Chat.")
 
 
 if __name__ == "__main__":
