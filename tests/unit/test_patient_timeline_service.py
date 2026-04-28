@@ -4,7 +4,7 @@ Testes do serviço de timeline clínica individual.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from unittest.mock import Mock
 
 import pytest
@@ -37,47 +37,34 @@ class FakeEncounterRepository:
 
 
 @dataclass(slots=True)
-class FakeClinicalEventsRepository:
-    """Repositório fake de eventos clínicos."""
+class FakeGeneralHospitalRepository:
+    """Repositório fake do contexto General Hospital."""
 
-    conditions_by_encounter: dict[str, list[dict[str, object]]]
-    procedures_by_encounter: dict[str, dict[str, list[dict[str, object]]]]
-    medications_by_encounter: dict[str, dict[str, list[dict[str, object]]]]
-    labevents: list[dict[str, object]]
-    micro_tests: list[dict[str, object]]
-    micro_orgs: list[dict[str, object]]
-    micro_suscs: list[dict[str, object]]
-    charted_by_encounter: dict[str, dict[str, list[dict[str, object]]]]
-    vital_sign_components: list[dict[str, object]]
-    specimens: list[dict[str, object]]
+    conditions: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    procedures: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_requests: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_dispenses: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_administrations: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    labevents: list[dict[str, object]] = field(default_factory=list)
+    micro_tests: list[dict[str, object]] = field(default_factory=list)
+    micro_orgs: list[dict[str, object]] = field(default_factory=list)
+    micro_suscs: list[dict[str, object]] = field(default_factory=list)
+    specimens: list[dict[str, object]] = field(default_factory=list)
 
     def list_conditions(self, connection, encounter_id: str) -> list[dict[str, object]]:
-        return list(self.conditions_by_encounter.get(encounter_id, []))
+        return list(self.conditions.get(encounter_id, []))
 
-    def list_procedures(self, connection, encounter_id: str) -> dict[str, list[dict[str, object]]]:
-        return {
-            key: list(value)
-            for key, value in self.procedures_by_encounter.get(
-                encounter_id,
-                {"procedure": [], "procedure_ed": [], "procedure_icu": []},
-            ).items()
-        }
+    def list_procedures(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.procedures.get(encounter_id, []))
 
-    def list_medications(self, connection, encounter_id: str) -> dict[str, list[dict[str, object]]]:
-        return {
-            key: list(value)
-            for key, value in self.medications_by_encounter.get(
-                encounter_id,
-                {
-                    "medication_request": [],
-                    "medication_dispense": [],
-                    "medication_dispense_ed": [],
-                    "medication_administration": [],
-                    "medication_administration_icu": [],
-                    "medication_statement_ed": [],
-                },
-            ).items()
-        }
+    def list_medication_requests(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_requests.get(encounter_id, []))
+
+    def list_medication_dispenses(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_dispenses.get(encounter_id, []))
+
+    def list_medication_administrations(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_administrations.get(encounter_id, []))
 
     def list_labevents(self, connection, patient_id: str) -> list[dict[str, object]]:
         return list(self.labevents)
@@ -91,68 +78,100 @@ class FakeClinicalEventsRepository:
     def list_micro_suscs(self, connection, org_ids: list[str]) -> list[dict[str, object]]:
         return list(self.micro_suscs)
 
-    def list_charted_observations(self, connection, encounter_id: str) -> dict[str, list[dict[str, object]]]:
-        return {
-            key: list(value)
-            for key, value in self.charted_by_encounter.get(
-                encounter_id,
-                {
-                    "observation_chartevents": [],
-                    "observation_datetimeevents": [],
-                    "observation_outputevents": [],
-                    "observation_ed": [],
-                    "observation_vital_signs_ed": [],
-                },
-            ).items()
-        }
+    def list_specimens(self, connection, patient_id: str) -> list[dict[str, object]]:
+        return list(self.specimens)
+
+
+@dataclass(slots=True)
+class FakeEmergencyDepartmentRepository:
+    """Repositório fake do contexto Emergency Department."""
+
+    encounter_ed: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    conditions: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    procedures: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    observations: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    vital_signs: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    vital_sign_components: list[dict[str, object]] = field(default_factory=list)
+    medication_dispenses: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_statements: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+
+    def list_encounter_ed(self, connection, patient_id: str, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.encounter_ed.get(encounter_id, []))
+
+    def list_conditions(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.conditions.get(encounter_id, []))
+
+    def list_procedures(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.procedures.get(encounter_id, []))
+
+    def list_observations(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.observations.get(encounter_id, []))
+
+    def list_vital_signs(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.vital_signs.get(encounter_id, []))
 
     def list_vital_sign_components(self, connection, observation_ids: list[str]) -> list[dict[str, object]]:
         return list(self.vital_sign_components)
 
-    def list_specimens(self, connection, patient_id: str) -> list[dict[str, object]]:
-        return list(self.specimens)
+    def list_medication_dispenses(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_dispenses.get(encounter_id, []))
+
+    def list_medication_statements(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_statements.get(encounter_id, []))
+
+
+@dataclass(slots=True)
+class FakeIcuRepository:
+    """Repositório fake do contexto ICU."""
+
+    encounter_icu: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    procedures: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_administrations: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    charted_events: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    datetime_events: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    output_events: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+
+    def list_encounter_icu(self, connection, patient_id: str, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.encounter_icu.get(encounter_id, []))
+
+    def list_procedures(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.procedures.get(encounter_id, []))
+
+    def list_medication_administrations(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_administrations.get(encounter_id, []))
+
+    def list_charted_events(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.charted_events.get(encounter_id, []))
+
+    def list_datetime_events(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.datetime_events.get(encounter_id, []))
+
+    def list_output_events(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.output_events.get(encounter_id, []))
 
 
 def _build_service(
     *,
     patient: dict[str, object] | None,
     encounters: list[dict[str, object]],
-    conditions_by_encounter: dict[str, list[dict[str, object]]] | None = None,
-    procedures_by_encounter: dict[str, dict[str, list[dict[str, object]]]] | None = None,
-    medications_by_encounter: dict[str, dict[str, list[dict[str, object]]]] | None = None,
-    labevents: list[dict[str, object]] | None = None,
-    micro_tests: list[dict[str, object]] | None = None,
-    micro_orgs: list[dict[str, object]] | None = None,
-    micro_suscs: list[dict[str, object]] | None = None,
-    charted_by_encounter: dict[str, dict[str, list[dict[str, object]]]] | None = None,
-    vital_sign_components: list[dict[str, object]] | None = None,
-    specimens: list[dict[str, object]] | None = None,
+    general_hospital: FakeGeneralHospitalRepository | None = None,
+    emergency_department: FakeEmergencyDepartmentRepository | None = None,
+    icu: FakeIcuRepository | None = None,
 ) -> PatientTimelineService:
     """Monta um serviço com repositórios fake."""
 
     repositories = TimelineRepositories(
         patient_repository=FakePatientRepository(patient=patient),
         encounter_repository=FakeEncounterRepository(encounters=encounters),
-        clinical_events_repository=FakeClinicalEventsRepository(
-            conditions_by_encounter=conditions_by_encounter or {},
-            procedures_by_encounter=procedures_by_encounter or {},
-            medications_by_encounter=medications_by_encounter or {},
-            labevents=labevents or [],
-            micro_tests=micro_tests or [],
-            micro_orgs=micro_orgs or [],
-            micro_suscs=micro_suscs or [],
-            charted_by_encounter=charted_by_encounter or {},
-            vital_sign_components=vital_sign_components or [],
-            specimens=specimens or [],
-        ),
+        general_hospital_repository=general_hospital or FakeGeneralHospitalRepository(),
+        emergency_department_repository=emergency_department or FakeEmergencyDepartmentRepository(),
+        icu_repository=icu or FakeIcuRepository(),
     )
     return PatientTimelineService(repositories)
 
 
 def test_build_timeline_raises_for_missing_patient() -> None:
-    """
-    Deve falhar com erro específico quando o paciente não existe.
-    """
+    """Deve falhar quando o paciente não existe."""
 
     service = _build_service(patient=None, encounters=[])
 
@@ -161,37 +180,22 @@ def test_build_timeline_raises_for_missing_patient() -> None:
 
 
 def test_build_timeline_returns_patient_with_no_encounters() -> None:
-    """
-    Deve retornar a timeline com paciente carregado e sem encounters.
-    """
+    """Deve retornar o paciente mesmo sem encounters."""
 
     service = _build_service(
-        patient={
-            "id": "pat-1",
-            "name": "Jane Doe",
-            "gender": "female",
-            "birth_date": "1980-01-01",
-            "identifier": "123",
-            "race": "White",
-            "ethnicity": "Not Hispanic or Latino",
-            "birthsex": "F",
-            "managing_organization_id": "org-1",
-            "managing_organization_name": "Hospital A",
-        },
+        patient={"id": "pat-1", "name": "Jane Doe", "managing_organization_name": "Hospital A"},
         encounters=[],
     )
 
     timeline = service.build_timeline(Mock(), "pat-1")
 
     assert timeline.patient.id == "pat-1"
-    assert timeline.patient.managing_organization_name == "Hospital A"
+    assert timeline.patient.name == "Jane Doe"
     assert timeline.encounters == []
 
 
 def test_build_timeline_sorts_encounters_chronologically() -> None:
-    """
-    Deve ordenar encounters por início, fim e id.
-    """
+    """Deve ordenar encounters por início, fim e id."""
 
     service = _build_service(
         patient={"id": "pat-1"},
@@ -207,130 +211,131 @@ def test_build_timeline_sorts_encounters_chronologically() -> None:
     assert [encounter.summary.id for encounter in timeline.encounters] == ["enc-1", "enc-2", "enc-3"]
 
 
-def test_build_timeline_groups_diagnoses_procedures_and_medications_by_encounter() -> None:
-    """
-    Deve preservar o agrupamento clínico por encounter.
-    """
+def test_build_timeline_builds_general_ed_and_icu_contexts() -> None:
+    """Deve montar os três contextos clínicos com dados estruturados."""
 
-    service = _build_service(
-        patient={"id": "pat-1"},
-        encounters=[
-            {"id": "enc-1", "start_date": "2024-01-01", "end_date": "2024-01-02"},
-            {"id": "enc-2", "start_date": "2024-01-03", "end_date": "2024-01-04"},
-        ],
-        conditions_by_encounter={
-            "enc-1": [{"id": "cond-1"}],
-            "enc-2": [{"id": "cond-2"}],
-        },
-        procedures_by_encounter={
-            "enc-1": {
-                "procedure": [{"id": "proc-1"}],
-                "procedure_ed": [],
-                "procedure_icu": [],
-            },
-            "enc-2": {
-                "procedure": [],
-                "procedure_ed": [{"id": "proc-ed-1"}],
-                "procedure_icu": [{"id": "proc-icu-1"}],
-            },
-        },
-        medications_by_encounter={
-            "enc-1": {
-                "medication_request": [{"id": "mr-1"}],
-                "medication_dispense": [],
-                "medication_dispense_ed": [],
-                "medication_administration": [],
-                "medication_administration_icu": [],
-                "medication_statement_ed": [],
-            },
-            "enc-2": {
-                "medication_request": [],
-                "medication_dispense": [{"id": "md-1"}],
-                "medication_dispense_ed": [{"id": "mded-1"}],
-                "medication_administration": [{"id": "ma-1"}],
-                "medication_administration_icu": [{"id": "maicu-1"}],
-                "medication_statement_ed": [{"id": "ms-1"}],
-            },
-        },
+    general_hospital = FakeGeneralHospitalRepository(
+        conditions={"enc-1": [{"id": "cond-1"}]},
+        procedures={"enc-1": [{"id": "proc-1"}]},
+        medication_requests={"enc-1": [{"id": "mr-1"}]},
+        medication_dispenses={"enc-1": [{"id": "md-1"}]},
+        medication_administrations={"enc-1": [{"id": "ma-1"}]},
+        labevents=[{"id": "lab-1", "effective_at": "2024-01-02T10:00:00"}],
+        micro_tests=[{"id": "mt-1", "effective_at": "2024-01-02T11:00:00"}],
+        micro_orgs=[{"id": "mo-1", "derived_from_observation_micro_test_id": "mt-1"}],
+        micro_suscs=[{"id": "ms-1", "derived_from_observation_micro_org_id": "mo-1"}],
+        specimens=[{"id": "spec-1", "collected_at": "2024-01-02T08:00:00"}],
     )
-
-    timeline = service.build_timeline(Mock(), "pat-1")
-
-    encounter_one = timeline.encounters[0]
-    encounter_two = timeline.encounters[1]
-    assert encounter_one.diagnoses == [{"id": "cond-1"}]
-    assert encounter_one.procedures["procedure"] == [{"id": "proc-1"}]
-    assert encounter_one.medications["medication_request"] == [{"id": "mr-1"}]
-    assert encounter_two.diagnoses == [{"id": "cond-2"}]
-    assert encounter_two.procedures["procedure_ed"] == [{"id": "proc-ed-1"}]
-    assert encounter_two.procedures["procedure_icu"] == [{"id": "proc-icu-1"}]
-    assert encounter_two.medications["medication_dispense"] == [{"id": "md-1"}]
-    assert encounter_two.medications["medication_statement_ed"] == [{"id": "ms-1"}]
-
-
-def test_build_timeline_filters_events_by_encounter_window() -> None:
-    """
-    Deve manter apenas eventos dentro do intervalo do encounter.
-    """
-
-    service = _build_service(
-        patient={"id": "pat-1"},
-        encounters=[{"id": "enc-1", "start_date": "2024-01-02T00:00:00", "end_date": "2024-01-04T23:59:59"}],
-        labevents=[
-            {"id": "lab-in", "effective_at": "2024-01-03T12:00:00"},
-            {"id": "lab-before", "effective_at": "2024-01-01T12:00:00"},
-            {"id": "lab-after", "effective_at": "2024-01-05T12:00:00"},
-            {"id": "lab-missing", "effective_at": None},
-        ],
-        micro_tests=[
-            {"id": "mt-direct", "encounter_id": "enc-1", "effective_at": None},
-            {"id": "mt-window", "encounter_id": None, "effective_at": "2024-01-03T10:00:00"},
-            {"id": "mt-out", "encounter_id": None, "effective_at": "2024-01-05T10:00:00"},
-        ],
-        micro_orgs=[
-            {"id": "mo-1", "derived_from_observation_micro_test_id": "mt-direct"},
-        ],
-        micro_suscs=[
-            {"id": "ms-1", "derived_from_observation_micro_org_id": "mo-1"},
-        ],
-        charted_by_encounter={
-            "enc-1": {
-                "observation_chartevents": [{"id": "chart-1"}],
-                "observation_datetimeevents": [{"id": "dt-1"}],
-                "observation_outputevents": [{"id": "out-1"}],
-                "observation_ed": [{"id": "ed-1"}],
-                "observation_vital_signs_ed": [
-                    {"id": "vital-1"},
-                ],
-            }
-        },
+    emergency_department = FakeEmergencyDepartmentRepository(
+        encounter_ed={"enc-1": [{"id": "enc-ed-1", "encounter_id": "enc-1"}]},
+        conditions={"enc-1": [{"id": "cond-ed-1"}]},
+        procedures={"enc-1": [{"id": "proc-ed-1"}]},
+        observations={"enc-1": [{"id": "obs-ed-1"}]},
+        vital_signs={"enc-1": [{"id": "vital-1"}]},
         vital_sign_components=[{"id": "comp-1", "observation_vital_signs_ed_id": "vital-1"}],
-        specimens=[
-            {"id": "spec-in", "collected_at": "2024-01-03T08:00:00"},
-            {"id": "spec-before", "collected_at": "2024-01-01T08:00:00"},
-        ],
+        medication_dispenses={"enc-1": [{"id": "mded-1"}]},
+        medication_statements={"enc-1": [{"id": "msed-1"}]},
+    )
+    icu = FakeIcuRepository(
+        encounter_icu={"enc-1": [{"id": "enc-icu-1", "encounter_id": "enc-1"}]},
+        procedures={"enc-1": [{"id": "proc-icu-1"}]},
+        medication_administrations={"enc-1": [{"id": "mai-1"}]},
+        charted_events={"enc-1": [{"id": "chart-1"}]},
+        datetime_events={"enc-1": [{"id": "dt-1"}]},
+        output_events={"enc-1": [{"id": "out-1"}]},
+    )
+    service = _build_service(
+        patient={"id": "pat-1", "name": "Jane Doe"},
+        encounters=[{"id": "enc-1", "start_date": "2024-01-01", "end_date": "2024-01-03"}],
+        general_hospital=general_hospital,
+        emergency_department=emergency_department,
+        icu=icu,
     )
 
     timeline = service.build_timeline(Mock(), "pat-1")
     encounter = timeline.encounters[0]
 
-    assert [row["id"] for row in encounter.laboratory] == ["lab-in"]
-    assert [row["id"] for row in encounter.microbiology["observation_micro_test"]] == [
-        "mt-direct",
-        "mt-window",
+    assert encounter.general_hospital["hospitalization"]["id"] == "enc-1"
+    assert encounter.general_hospital["diagnoses"] == [{"id": "cond-1"}]
+    assert encounter.general_hospital["procedures"] == [{"id": "proc-1"}]
+    assert encounter.general_hospital["medications"]["pedidos_de_medicacao"] == [{"id": "mr-1"}]
+    assert encounter.general_hospital["medications"]["dispensacoes"] == [{"id": "md-1"}]
+    assert encounter.general_hospital["medications"]["administracoes"] == [{"id": "ma-1"}]
+    assert encounter.general_hospital["labs"] == [{"id": "lab-1", "effective_at": "2024-01-02T10:00:00"}]
+    assert encounter.general_hospital["microbiology"]["testes"] == [
+        {"id": "mt-1", "effective_at": "2024-01-02T11:00:00"}
     ]
-    assert [row["id"] for row in encounter.microbiology["observation_micro_org"]] == ["mo-1"]
-    assert [row["id"] for row in encounter.microbiology["observation_micro_susc"]] == ["ms-1"]
-    assert [row["id"] for row in encounter.specimens] == ["spec-in"]
-    assert encounter.charted_observations["observation_vital_signs_ed"][0]["components"] == [
+    assert encounter.general_hospital["microbiology"]["organismos"] == [
+        {"id": "mo-1", "derived_from_observation_micro_test_id": "mt-1"}
+    ]
+    assert encounter.general_hospital["microbiology"]["susceptibilidades"] == [
+        {"id": "ms-1", "derived_from_observation_micro_org_id": "mo-1"}
+    ]
+    assert encounter.general_hospital["specimens"] == [{"id": "spec-1", "collected_at": "2024-01-02T08:00:00"}]
+
+    assert encounter.emergency_department["stay"] == {"id": "enc-ed-1", "encounter_id": "enc-1"}
+    assert encounter.emergency_department["diagnoses"] == [{"id": "cond-ed-1"}]
+    assert encounter.emergency_department["procedures"] == [{"id": "proc-ed-1"}]
+    assert encounter.emergency_department["observations"] == [{"id": "obs-ed-1"}]
+    assert encounter.emergency_department["vital_signs"][0]["components"] == [
         {"id": "comp-1", "observation_vital_signs_ed_id": "vital-1"}
     ]
+    assert encounter.emergency_department["medications"]["dispensacoes_ed"] == [{"id": "mded-1"}]
+    assert encounter.emergency_department["medications"]["medication_statements_ed"] == [{"id": "msed-1"}]
+
+    assert encounter.icu["stay"] == {"id": "enc-icu-1", "encounter_id": "enc-1"}
+    assert encounter.icu["procedures"] == [{"id": "proc-icu-1"}]
+    assert encounter.icu["medications"] == [{"id": "mai-1"}]
+    assert encounter.icu["charted_events"] == [{"id": "chart-1"}]
+    assert encounter.icu["output_events"] == [{"id": "out-1"}]
+    assert encounter.icu["datetime_events"] == [{"id": "dt-1"}]
 
 
-def test_build_timeline_keeps_empty_sections_present() -> None:
-    """
-    Deve montar a timeline mesmo quando não há eventos associados.
-    """
+def test_build_timeline_filters_temporal_events_and_keeps_empty_contexts() -> None:
+    """Deve filtrar eventos por intervalo e manter contextos vazios vazios."""
+
+    general_hospital = FakeGeneralHospitalRepository(
+        labevents=[
+            {"id": "lab-in", "effective_at": "2024-01-02T10:00:00"},
+            {"id": "lab-out", "effective_at": "2024-01-05T10:00:00"},
+            {"id": "lab-missing", "effective_at": None},
+        ],
+        micro_tests=[
+            {"id": "mt-direct", "encounter_id": "enc-1", "effective_at": None},
+            {"id": "mt-window", "encounter_id": None, "effective_at": "2024-01-02T12:00:00"},
+            {"id": "mt-out", "encounter_id": None, "effective_at": "2024-01-05T12:00:00"},
+        ],
+        micro_orgs=[
+            {"id": "mo-1", "derived_from_observation_micro_test_id": "mt-direct"},
+            {"id": "mo-extra", "derived_from_observation_micro_test_id": "other"},
+        ],
+        micro_suscs=[
+            {"id": "ms-1", "derived_from_observation_micro_org_id": "mo-1"},
+            {"id": "ms-extra", "derived_from_observation_micro_org_id": "other"},
+        ],
+        specimens=[
+            {"id": "spec-in", "collected_at": "2024-01-02T08:00:00"},
+            {"id": "spec-out", "collected_at": "2024-01-05T08:00:00"},
+        ],
+    )
+    service = _build_service(
+        patient={"id": "pat-1"},
+        encounters=[{"id": "enc-1", "start_date": "2024-01-02T00:00:00", "end_date": "2024-01-03T00:00:00"}],
+        general_hospital=general_hospital,
+    )
+
+    timeline = service.build_timeline(Mock(), "pat-1")
+    context = timeline.encounters[0].general_hospital
+
+    assert [row["id"] for row in context["labs"]] == ["lab-in"]
+    assert [row["id"] for row in context["microbiology"]["testes"]] == ["mt-window", "mt-direct"]
+    assert [row["id"] for row in context["microbiology"]["organismos"]] == ["mo-1"]
+    assert [row["id"] for row in context["microbiology"]["susceptibilidades"]] == ["ms-1"]
+    assert [row["id"] for row in context["specimens"]] == ["spec-in"]
+
+
+def test_build_timeline_keeps_empty_ed_and_icu_contexts_empty() -> None:
+    """Deve manter ED e ICU vazios quando não houver dados."""
 
     service = _build_service(
         patient={"id": "pat-1"},
@@ -340,27 +345,19 @@ def test_build_timeline_keeps_empty_sections_present() -> None:
     timeline = service.build_timeline(Mock(), "pat-1")
     encounter = timeline.encounters[0]
 
-    assert encounter.diagnoses == []
-    assert encounter.procedures == {"procedure": [], "procedure_ed": [], "procedure_icu": []}
-    assert encounter.medications == {
-        "medication_request": [],
-        "medication_dispense": [],
-        "medication_dispense_ed": [],
-        "medication_administration": [],
-        "medication_administration_icu": [],
-        "medication_statement_ed": [],
+    assert encounter.general_hospital["hospitalization"]["id"] == "enc-1"
+    assert encounter.emergency_department["stay"] is None
+    assert encounter.emergency_department["diagnoses"] == []
+    assert encounter.emergency_department["procedures"] == []
+    assert encounter.emergency_department["observations"] == []
+    assert encounter.emergency_department["vital_signs"] == []
+    assert encounter.emergency_department["medications"] == {
+        "dispensacoes_ed": [],
+        "medication_statements_ed": [],
     }
-    assert encounter.laboratory == []
-    assert encounter.microbiology == {
-        "observation_micro_test": [],
-        "observation_micro_org": [],
-        "observation_micro_susc": [],
-    }
-    assert encounter.charted_observations == {
-        "observation_chartevents": [],
-        "observation_datetimeevents": [],
-        "observation_outputevents": [],
-        "observation_ed": [],
-        "observation_vital_signs_ed": [],
-    }
-    assert encounter.specimens == []
+    assert encounter.icu["stay"] is None
+    assert encounter.icu["procedures"] == []
+    assert encounter.icu["medications"] == []
+    assert encounter.icu["charted_events"] == []
+    assert encounter.icu["output_events"] == []
+    assert encounter.icu["datetime_events"] == []

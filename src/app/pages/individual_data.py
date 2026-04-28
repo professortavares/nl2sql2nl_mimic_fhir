@@ -125,92 +125,114 @@ def _render_timeline(encounters: Sequence[EncounterTimeline]) -> None:
     for encounter in encounters:
         title = _build_encounter_title(encounter)
         with st.expander(title, expanded=False):
-            _render_encounter_summary(encounter)
-            _render_rows_section("Diagnósticos", encounter.diagnoses)
-            _render_grouped_sections("Procedimentos", encounter.procedures)
-            _render_grouped_sections("Medicações", encounter.medications)
-            _render_rows_section("Laboratório", encounter.laboratory)
-            _render_microbiology_section(encounter.microbiology)
-            _render_grouped_sections("Observações charted", encounter.charted_observations)
-            _render_rows_section("Specimens", encounter.specimens)
+            tabs = st.tabs(["General Hospital", "Emergency Department (ED)", "Intensive Care Unit (ICU)"])
+            with tabs[0]:
+                _render_general_hospital_context(encounter.general_hospital)
+            with tabs[1]:
+                _render_emergency_department_context(encounter.emergency_department)
+            with tabs[2]:
+                _render_icu_context(encounter.icu)
 
 
-def _render_encounter_summary(encounter: EncounterTimeline) -> None:
+def _render_general_hospital_context(context: dict[str, Any]) -> None:
     """
-    Exibe o resumo do encounter.
-    """
-
-    st.markdown("#### Resumo do encounter")
-    columns = st.columns(2)
-    left_items = [
-        ("Encounter ID", encounter.summary.id),
-        ("Status", encounter.summary.status),
-        ("Class code", encounter.summary.class_code),
-        ("Start date", encounter.summary.start_date),
-        ("End date", encounter.summary.end_date),
-    ]
-    right_items = [
-        ("Organization ID", encounter.summary.organization_id),
-        ("Organization", encounter.summary.organization_name),
-        ("Admit source", encounter.summary.admit_source_code),
-        ("Discharge disposition", encounter.summary.discharge_disposition_code),
-        ("Service type", encounter.summary.service_type_code),
-        ("Priority", encounter.summary.priority_code),
-    ]
-    _render_key_value_list(columns[0], left_items)
-    _render_key_value_list(columns[1], right_items)
-
-
-def _render_microbiology_section(microbiology: dict[str, list[dict[str, Any]]]) -> None:
-    """
-    Exibe os eventos de microbiologia por etapa.
+    Renderiza o contexto de hospital geral.
     """
 
-    st.markdown("#### Microbiologia")
-    if not microbiology:
-        st.caption("Nenhum registro encontrado.")
+    if not _has_context_data(context):
+        st.info("Nenhum dado encontrado para este contexto.")
         return
 
-    for section_name, rows in microbiology.items():
-        st.markdown(f"**{_friendly_section_name(section_name)}**")
-        _render_rows_section(section_name, rows)
+    _render_section("Informações da hospitalização", context.get("hospitalization"), mode="single")
+    _render_section("Diagnósticos", context.get("diagnoses"))
+    _render_section("Procedimentos gerais", context.get("procedures"))
+    medications = context.get("medications") or {}
+    _render_section("Pedidos de medicação", medications.get("pedidos_de_medicacao"))
+    _render_section("Dispensações", medications.get("dispensacoes"))
+    _render_section("Administrações", medications.get("administracoes"))
+    _render_section("Exames laboratoriais", context.get("labs"))
+    microbiology = context.get("microbiology") or {}
+    _render_section("Testes microbiológicos", microbiology.get("testes"))
+    _render_section("Organismos identificados", microbiology.get("organismos"))
+    _render_section("Susceptibilidades", microbiology.get("susceptibilidades"))
+    _render_section("Specimens", context.get("specimens"))
 
 
-def _render_grouped_sections(title: str, grouped_rows: dict[str, list[dict[str, Any]]]) -> None:
+def _render_emergency_department_context(context: dict[str, Any]) -> None:
     """
-    Exibe conjuntos de registros agrupados por fonte.
+    Renderiza o contexto do departamento de emergência.
     """
 
-    st.markdown(f"#### {title}")
-    if not grouped_rows:
-        st.caption("Nenhum registro encontrado.")
+    if not _has_context_data(context):
+        st.info("Nenhum dado encontrado para este contexto.")
         return
 
-    any_rows = False
-    for section_name, rows in grouped_rows.items():
-        st.markdown(f"**{_friendly_section_name(section_name)}**")
-        _render_rows_section(section_name, rows)
-        any_rows = any_rows or bool(rows)
-    if not any_rows:
-        st.caption("Nenhum registro encontrado.")
+    _render_section("Informações da permanência no ED", context.get("stay"), mode="single")
+    _render_section("Diagnósticos ED", context.get("diagnoses"))
+    _render_section("Procedimentos ED", context.get("procedures"))
+    _render_section("Observações da emergência", context.get("observations"))
+    _render_vital_signs_section(context.get("vital_signs") or [])
+    medications = context.get("medications") or {}
+    _render_section("Dispensações de medicamentos", medications.get("dispensacoes_ed"))
+    _render_section("Declarações de medicação", medications.get("medication_statements_ed"))
 
 
-def _render_rows_section(title: str, rows: list[dict[str, Any]]) -> None:
+def _render_icu_context(context: dict[str, Any]) -> None:
     """
-    Exibe uma tabela simples ou mensagem vazia.
+    Renderiza o contexto de UTI.
+    """
+
+    if not _has_context_data(context):
+        st.info("Nenhum dado encontrado para este contexto.")
+        return
+
+    _render_section("Informações da permanência na ICU", context.get("stay"), mode="single")
+    _render_section("Procedimentos ICU", context.get("procedures"))
+    _render_section("Administrações de medicação ICU", context.get("medications"))
+    _render_section("Eventos charted", context.get("charted_events"))
+    _render_section("Eventos de saída", context.get("output_events"))
+    _render_section("Eventos data/hora", context.get("datetime_events"))
+
+
+def _render_vital_signs_section(rows: list[dict[str, Any]]) -> None:
+    """
+    Renderiza sinais vitais ED com componentes associados.
     """
 
     if not rows:
         st.caption("Nenhum registro encontrado.")
         return
 
-    display_rows = [_normalize_row(row) for row in rows]
-    st.dataframe(display_rows, use_container_width=True, hide_index=True)
-    if title == "observation_vital_signs_ed":
-        components = _collect_components(rows)
-        if components:
-            st.markdown("**Componentes**")
-            st.dataframe(components, use_container_width=True, hide_index=True)
+    st.markdown("#### Sinais vitais ED")
+    st.dataframe(_normalize_rows(rows), use_container_width=True, hide_index=True)
+    components = _collect_components(rows)
+    if components:
+        st.markdown("##### Componentes")
+        st.dataframe(_normalize_rows(components), use_container_width=True, hide_index=True)
+
+
+def _render_section(title: str, data: Any, *, mode: str = "table") -> None:
+    """
+    Renderiza uma seção clínica simples.
+    """
+
+    if not data:
+        st.caption("Nenhum registro encontrado.")
+        return
+
+    st.markdown(f"#### {title}")
+    if mode == "single":
+        st.dataframe(_normalize_rows([data]), use_container_width=True, hide_index=True)
+        return
+    if isinstance(data, list):
+        st.dataframe(_normalize_rows(data), use_container_width=True, hide_index=True)
+        return
+    if isinstance(data, dict):
+        for subsection_title, subsection_rows in data.items():
+            st.markdown(f"**{_friendly_section_name(subsection_title)}**")
+            _render_section(subsection_title, subsection_rows)
+        return
+    st.write(data)
 
 
 def _collect_components(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -244,10 +266,10 @@ def _build_encounter_title(encounter: EncounterTimeline) -> str:
     Monta o título de um expander de encounter.
     """
 
-    start_date = encounter.summary.start_date or "sem início"
-    end_date = encounter.summary.end_date or "em aberto"
-    class_code = encounter.summary.class_code or "sem class"
-    status = encounter.summary.status or "sem status"
+    start_date = _format_display_value(encounter.summary.start_date) or "sem início"
+    end_date = _format_display_value(encounter.summary.end_date) or "em aberto"
+    class_code = _format_display_value(encounter.summary.class_code) or "sem class"
+    status = _format_display_value(encounter.summary.status) or "sem status"
     encounter_id = encounter.summary.id[:8]
     return f"{start_date} → {end_date} | class {class_code} | {status} | {encounter_id}"
 
@@ -258,9 +280,44 @@ def _friendly_section_name(section_name: str) -> str:
     return section_name.replace("_", " ").title()
 
 
+def _normalize_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normaliza registros para exibição na tabela."""
+
+    return [_normalize_row(row) for row in rows]
+
+
 def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-    """Normaliza valores para exibição na tabela."""
+    """Remove estruturas internas e formata datas para exibição."""
 
     normalized_row = dict(row)
     normalized_row.pop("components", None)
+    for key, value in list(normalized_row.items()):
+        normalized_row[key] = _format_display_value(value)
     return normalized_row
+
+
+def _format_display_value(value: Any) -> Any:
+    """Formata valores de exibição sem alterar identificadores ou textos."""
+
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return [_format_display_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _format_display_value(item) for key, item in value.items()}
+    return value
+
+
+def _has_context_data(context: dict[str, Any]) -> bool:
+    """Indica se um contexto clínico possui dados relevantes."""
+
+    for value in context.values():
+        if isinstance(value, list) and value:
+            return True
+        if isinstance(value, dict) and _has_context_data(value):
+            return True
+        if value not in (None, [], {}):
+            return True
+    return False

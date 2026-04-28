@@ -46,13 +46,9 @@ class EncounterTimeline:
     """Agrupa os eventos clínicos associados a um encounter."""
 
     summary: EncounterSummary
-    diagnoses: list[dict[str, Any]] = field(default_factory=list)
-    procedures: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
-    medications: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
-    laboratory: list[dict[str, Any]] = field(default_factory=list)
-    microbiology: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
-    charted_observations: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
-    specimens: list[dict[str, Any]] = field(default_factory=list)
+    general_hospital: dict[str, Any] = field(default_factory=dict)
+    emergency_department: dict[str, Any] = field(default_factory=dict)
+    icu: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
