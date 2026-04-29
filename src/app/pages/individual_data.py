@@ -162,6 +162,7 @@ def _render_general_hospital_context(context: dict[str, Any]) -> None:
     ]
     _render_key_value_list(columns[0], left_items)
     _render_key_value_list(columns[1], right_items)
+    _render_diagnoses_section(context.get("diagnoses") or [])
 
 
 def _render_emergency_department_context(context: dict[str, Any]) -> None:
@@ -239,6 +240,26 @@ def _render_section(title: str, data: Any, *, mode: str = "table") -> None:
             _render_section(subsection_title, subsection_rows)
         return
     st.write(data)
+
+
+def _render_diagnoses_section(rows: list[dict[str, Any]]) -> None:
+    """
+    Renderiza os diagnósticos associados ao encounter atual.
+    """
+
+    st.markdown("#### Diagnoses")
+    if not rows:
+        st.caption("No diagnoses found for this encounter.")
+        return
+
+    diagnosis_rows = [
+        {
+            "condition_code": row.get("condition_code"),
+            "condition_code_display": row.get("condition_code_display"),
+        }
+        for row in rows
+    ]
+    st.dataframe(diagnosis_rows, use_container_width=True, hide_index=True)
 
 
 def _collect_components(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
