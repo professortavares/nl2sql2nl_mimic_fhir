@@ -20,6 +20,7 @@ _REFERENCE_TABLE_OVERRIDES: Final[dict[str, dict[str, str]]] = {
     "condition_ed": {"encounter_id": "encounter_ed"},
     "medication_dispense_ed": {"encounter_id": "encounter_ed"},
     "medication_statement_ed": {"encounter_id": "encounter_ed"},
+    "procedure_ed": {"encounter_id": "encounter_ed"},
     "observation_ed": {
         "encounter_id": "encounter_ed",
         "procedure_id": "procedure_ed",

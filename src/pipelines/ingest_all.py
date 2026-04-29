@@ -193,7 +193,11 @@ class IngestAllPipeline:
         self._procedure_ed_loader = ProcedureEDLoader(
             tables=tables.procedure_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_tables=resolve_reference_table(
+                tables,
+                primary_table_name="procedure_ed",
+                reference_column="encounter_id",
+            ),
         )
         self._procedure_icu_loader = ProcedureICULoader(
             tables=tables.procedure_icu,

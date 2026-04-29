@@ -872,7 +872,7 @@ def build_project_metadata(
         Column(
             "encounter_id",
             String(_FHIR_ID_MAX_LENGTH),
-            ForeignKey(f"{schema_name}.{encounter_table_name}.id", ondelete="SET NULL"),
+            ForeignKey(f"{schema_name}.{encounter_ed_table_name}.id", ondelete="SET NULL"),
             nullable=True,
         ),
         Column("status", String(50), nullable=True),
