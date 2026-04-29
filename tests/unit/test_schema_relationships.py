@@ -59,6 +59,7 @@ def test_specific_ed_and_icu_foreign_keys_point_to_the_expected_tables() -> None
     assert next(iter(tables.medication_dispense_ed.medication_dispense_ed.c.encounter_id.foreign_keys)).column.table.name == "encounter_ed"
     assert next(iter(tables.medication_statement_ed.medication_statement_ed.c.encounter_id.foreign_keys)).column.table.name == "encounter_ed"
     assert next(iter(tables.procedure.procedure.c.encounter_id.foreign_keys)).column.table.name == "encounter"
+    assert next(iter(tables.procedure_ed.procedure_ed.c.encounter_id.foreign_keys)).column.table.name == "encounter_ed"
     assert next(iter(tables.observation_micro_test.observation_micro_test.c.encounter_id.foreign_keys)).column.table.name == "encounter"
     assert next(iter(tables.observation_ed.observation_ed.c.encounter_id.foreign_keys)).column.table.name == "encounter_ed"
     assert next(iter(tables.observation_ed.observation_ed.c.procedure_id.foreign_keys)).column.table.name == "procedure_ed"

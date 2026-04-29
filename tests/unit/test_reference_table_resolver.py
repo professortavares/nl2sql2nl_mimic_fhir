@@ -19,6 +19,7 @@ from src.ingestion.reference_table_resolver import resolve_reference_table_name
         ("observation_ed", "procedure_id", "procedure_ed"),
         ("observation_vital_signs_ed", "encounter_id", "encounter_ed"),
         ("observation_vital_signs_ed", "procedure_id", "procedure_ed"),
+        ("procedure_ed", "encounter_id", "encounter_ed"),
         ("procedure_icu", "encounter_id", "encounter_icu"),
         ("medication_administration_icu", "encounter_id", "encounter_icu"),
     ],

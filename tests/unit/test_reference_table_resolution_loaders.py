@@ -19,6 +19,7 @@ from src.db.schema import (
     ObservationVitalSignsEDTables,
     PatientTables,
     ProcedureICUTables,
+    ProcedureEDTables,
 )
 from src.ingestion.loaders.condition_ed_loader import ConditionEDLoader
 from src.ingestion.loaders.medication_administration_icu_loader import MedicationAdministrationICULoader
@@ -28,6 +29,7 @@ from src.ingestion.loaders.observation_ed_loader import ObservationEDLoader
 from src.ingestion.loaders.observation_vital_signs_ed_loader import (
     ObservationVitalSignsEDLoader,
 )
+from src.ingestion.loaders.procedure_ed_loader import ProcedureEDLoader
 from src.ingestion.loaders.procedure_icu_loader import ProcedureICULoader
 from src.ingestion.transformers.observation_vital_signs_ed_transformer import (
     ObservationVitalSignsEDTransformationResult,
@@ -48,13 +50,19 @@ class _LoaderCase:
     expected_auxiliary_rows: int | None = None
 
 
-def _build_table(metadata: MetaData, table_name: str, column_names: tuple[str, ...]) -> Table:
+def _build_table(
+    metadata: MetaData,
+    table_name: str,
+    column_names: tuple[str, ...],
+    *,
+    extend_existing: bool = False,
+) -> Table:
     columns = [Column("id", String, primary_key=True)] if "id" in column_names else []
     for column_name in column_names:
         if column_name == "id":
             continue
         columns.append(Column(column_name, String, nullable=True))
-    return Table(table_name, metadata, *columns)
+    return Table(table_name, metadata, *columns, extend_existing=extend_existing)
 
 
 def _standard_reference_tables(metadata: MetaData) -> dict[str, Table]:
@@ -181,6 +189,22 @@ def _make_loader_cases() -> list[_LoaderCase]:
             expected_auxiliary_rows=0,
         ),
         _LoaderCase(
+            name="procedure_ed",
+            loader_factory=lambda tables: ProcedureEDLoader(
+                tables=ProcedureEDTables(procedure_ed=tables["procedure_ed"]),
+                patient_tables=PatientTables(patient=tables["patient"]),
+                encounter_tables=tables["encounter_ed"],
+            ),
+            target_table_name="procedure_ed",
+            target_columns=("id", "patient_id", "encounter_id"),
+            batch=[{"id": "proc-ed-1", "patient_id": "pat-1", "encounter_id": "enc-ed-1"}],
+            expected_row={"id": "proc-ed-1", "patient_id": "pat-1", "encounter_id": "enc-ed-1"},
+            seed_rows={
+                "patient": [{"id": "pat-1"}],
+                "encounter_ed": [{"id": "enc-ed-1"}],
+            },
+        ),
+        _LoaderCase(
             name="procedure_icu",
             loader_factory=lambda tables: ProcedureICULoader(
                 tables=ProcedureICUTables(procedure_icu=tables["procedure_icu"]),
@@ -242,6 +266,13 @@ def test_specific_reference_tables_keep_foreign_keys(case: _LoaderCase) -> None:
     }
     for table_name, column_names in target_table_columns.items():
         tables[table_name] = _build_table(metadata, table_name, column_names)
+    if case.name == "procedure_ed":
+        tables["procedure_ed"] = _build_table(
+            metadata,
+            "procedure_ed",
+            ("id", "patient_id", "encounter_id"),
+            extend_existing=True,
+        )
     tables["observation_vital_signs_ed_component"] = _build_table(
         metadata,
         "observation_vital_signs_ed_component",
