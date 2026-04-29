@@ -93,10 +93,12 @@ def _render_patient_summary(patient) -> None:
     """
 
     st.markdown("### Patient identification")
-    columns = st.columns(2)
+    columns = st.columns(3)
     left_items = [
         ("Patient ID", patient.id),
         ("Name", patient.name),
+    ]
+    middle_items = [
         ("Gender", patient.gender),
         ("Date of birth", patient.birth_date),
         ("Identifier", patient.identifier),
@@ -105,11 +107,11 @@ def _render_patient_summary(patient) -> None:
         ("Race", patient.race),
         ("Ethnicity", patient.ethnicity),
         ("Birth sex", patient.birthsex),
-        ("Organization ID", patient.managing_organization_id),
         ("Organization", patient.managing_organization_name),
     ]
     _render_key_value_list(columns[0], left_items)
-    _render_key_value_list(columns[1], right_items)
+    _render_key_value_list(columns[1], middle_items)
+    _render_key_value_list(columns[2], right_items)
 
 
 def _render_timeline(encounters: Sequence[EncounterTimeline]) -> None:
@@ -125,13 +127,7 @@ def _render_timeline(encounters: Sequence[EncounterTimeline]) -> None:
     for encounter in encounters:
         title = _build_encounter_title(encounter)
         with st.expander(title, expanded=False):
-            tabs = st.tabs(["General Hospital", "Emergency Department (ED)", "Intensive Care Unit (ICU)"])
-            with tabs[0]:
-                _render_general_hospital_context(encounter.general_hospital)
-            with tabs[1]:
-                _render_emergency_department_context(encounter.emergency_department)
-            with tabs[2]:
-                _render_icu_context(encounter.icu)
+            _render_general_hospital_context(encounter.general_hospital)
 
 
 def _render_general_hospital_context(context: dict[str, Any]) -> None:
@@ -140,22 +136,32 @@ def _render_general_hospital_context(context: dict[str, Any]) -> None:
     """
 
     if not _has_context_data(context):
-        st.info("Nenhum dado encontrado para este contexto.")
+        st.info("No data found for this context.")
         return
 
-    _render_section("Hospitalization information", context.get("hospitalization"), mode="single")
-    _render_section("Diagnoses", context.get("diagnoses"))
-    _render_section("General procedures", context.get("procedures"))
-    medications = context.get("medications") or {}
-    _render_section("Medication requests", medications.get("pedidos_de_medicacao"))
-    _render_section("Dispenses", medications.get("dispensacoes"))
-    _render_section("Administrations", medications.get("administracoes"))
-    _render_section("Lab tests", context.get("labs"))
-    microbiology = context.get("microbiology") or {}
-    _render_section("Microbiology tests", microbiology.get("testes"))
-    _render_section("Identified organisms", microbiology.get("organismos"))
-    _render_section("Susceptibilities", microbiology.get("susceptibilidades"))
-    _render_section("Specimens", context.get("specimens"))
+    hospitalization = context.get("hospitalization")
+    if not hospitalization:
+        st.info("No hospitalization information found for this encounter.")
+        return
+
+    st.markdown("### Hospitalization information")
+    columns = st.columns(2)
+    left_items = [
+        ("Encounter ID", hospitalization.get("id")),
+        ("Status", hospitalization.get("status")),
+        ("Class code", hospitalization.get("class_code")),
+        ("Start date", hospitalization.get("start_date")),
+        ("End date", hospitalization.get("end_date")),
+    ]
+    right_items = [
+        ("Organization", hospitalization.get("organization_name")),
+        ("Admit source", hospitalization.get("admit_source_code")),
+        ("Discharge disposition", hospitalization.get("discharge_disposition_code")),
+        ("Service type", hospitalization.get("service_type_code")),
+        ("Priority", hospitalization.get("priority_code")),
+    ]
+    _render_key_value_list(columns[0], left_items)
+    _render_key_value_list(columns[1], right_items)
 
 
 def _render_emergency_department_context(context: dict[str, Any]) -> None:
@@ -164,7 +170,7 @@ def _render_emergency_department_context(context: dict[str, Any]) -> None:
     """
 
     if not _has_context_data(context):
-        st.info("Nenhum dado encontrado para este contexto.")
+        st.info("No data found for this context.")
         return
 
     _render_section("ED stay information", context.get("stay"), mode="single")
@@ -183,7 +189,7 @@ def _render_icu_context(context: dict[str, Any]) -> None:
     """
 
     if not _has_context_data(context):
-        st.info("Nenhum dado encontrado para este contexto.")
+        st.info("No data found for this context.")
         return
 
     _render_section("ICU stay information", context.get("stay"), mode="single")
