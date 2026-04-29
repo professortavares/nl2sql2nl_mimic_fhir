@@ -66,13 +66,13 @@ Os diagramas abaixo mostram apenas as colunas persistidas nas tabelas finais; co
 - `condition.patient_id -> patient.id`
 - `condition.encounter_id -> encounter.id`
 - `condition_ed.patient_id -> patient.id`
-- `condition_ed.encounter_id -> encounter.id`
+- `condition_ed.encounter_id -> encounter_ed.id`
 - `procedure.patient_id -> patient.id`
 - `procedure.encounter_id -> encounter.id`
 - `procedure_ed.patient_id -> patient.id`
 - `procedure_ed.encounter_id -> encounter.id`
 - `procedure_icu.patient_id -> patient.id`
-- `procedure_icu.encounter_id -> encounter.id`
+- `procedure_icu.encounter_id -> encounter_icu.id`
 - `observation_labevents.patient_id -> patient.id`
 - `observation_labevents.specimen_id -> specimen.id`
 - `observation_micro_test.patient_id -> patient.id`
@@ -90,24 +90,24 @@ Os diagramas abaixo mostram apenas as colunas persistidas nas tabelas finais; co
 - `observation_outputevents.patient_id -> patient.id`
 - `observation_outputevents.encounter_id -> encounter.id`
 - `observation_ed.patient_id -> patient.id`
-- `observation_ed.encounter_id -> encounter.id`
-- `observation_ed.procedure_id -> procedure.id`
+- `observation_ed.encounter_id -> encounter_ed.id`
+- `observation_ed.procedure_id -> procedure_ed.id`
 - `observation_vital_signs_ed.patient_id -> patient.id`
-- `observation_vital_signs_ed.encounter_id -> encounter.id`
-- `observation_vital_signs_ed.procedure_id -> procedure.id`
+- `observation_vital_signs_ed.encounter_id -> encounter_ed.id`
+- `observation_vital_signs_ed.procedure_id -> procedure_ed.id`
 - `observation_vital_signs_ed_component.observation_vital_signs_ed_id -> observation_vital_signs_ed.id`
 - `medication_dispense.patient_id -> patient.id`
 - `medication_dispense.encounter_id -> encounter.id`
 - `medication_dispense.medication_request_id -> medication_request.id`
 - `medication_dispense_ed.patient_id -> patient.id`
-- `medication_dispense_ed.encounter_id -> encounter.id`
+- `medication_dispense_ed.encounter_id -> encounter_ed.id`
 - `medication_administration.patient_id -> patient.id`
 - `medication_administration.encounter_id -> encounter.id`
 - `medication_administration.medication_request_id -> medication_request.id`
 - `medication_administration_icu.patient_id -> patient.id`
-- `medication_administration_icu.encounter_id -> encounter.id`
+- `medication_administration_icu.encounter_id -> encounter_icu.id`
 - `medication_statement_ed.patient_id -> patient.id`
-- `medication_statement_ed.encounter_id -> encounter.id`
+- `medication_statement_ed.encounter_id -> encounter_ed.id`
 
 ## Diagramas Segmentados
 
