@@ -11,6 +11,7 @@ from typing import Any, Sequence
 from sqlalchemy import Connection, Table, insert, select
 
 from src.db.schema import EncounterTables, ObservationVitalSignsEDTables, PatientTables, ProcedureTables
+from src.ingestion.reference_table_resolver import extract_table
 from src.ingestion.transformers.observation_vital_signs_ed_transformer import (
     ObservationVitalSignsEDTransformationResult,
 )
@@ -48,8 +49,10 @@ class ObservationVitalSignsEDLoader:
         self,
         tables: ObservationVitalSignsEDTables,
         patient_tables: PatientTables,
-        encounter_tables: EncounterTables,
-        procedure_tables: ProcedureTables,
+        encounter_tables: EncounterTables | object | None = None,
+        procedure_tables: ProcedureTables | object | None = None,
+        encounter_table: Table | object | None = None,
+        procedure_table: Table | object | None = None,
     ) -> None:
         """
         Inicializa o carregador.
@@ -57,8 +60,14 @@ class ObservationVitalSignsEDLoader:
 
         self._tables = tables
         self._patient_tables = patient_tables
-        self._encounter_tables = encounter_tables
-        self._procedure_tables = procedure_tables
+        encounter_source = encounter_table if encounter_table is not None else encounter_tables
+        procedure_source = procedure_table if procedure_table is not None else procedure_tables
+        if encounter_source is None:
+            raise ValueError("É necessário informar encounter_tables ou encounter_table.")
+        if procedure_source is None:
+            raise ValueError("É necessário informar procedure_tables ou procedure_table.")
+        self._encounter_table = extract_table(encounter_source, "encounter")
+        self._procedure_table = extract_table(procedure_source, "procedure")
 
     @property
     def tables(self) -> ObservationVitalSignsEDTables:
@@ -94,13 +103,13 @@ class ObservationVitalSignsEDLoader:
         )
         valid_encounter_ids = self._fetch_existing_ids(
             connection=connection,
-            table=self._encounter_tables.encounter,
+            table=self._encounter_table,
             column_name="encounter_id",
             batch=main_rows,
         )
         valid_procedure_ids = self._fetch_existing_ids(
             connection=connection,
-            table=self._procedure_tables.procedure,
+            table=self._procedure_table,
             column_name="procedure_id",
             batch=main_rows,
         )

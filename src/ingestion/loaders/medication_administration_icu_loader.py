@@ -11,6 +11,7 @@ from typing import Any, Sequence
 from sqlalchemy import Connection, Table, insert, select
 
 from src.db.schema import EncounterTables, MedicationAdministrationICUTables, PatientTables
+from src.ingestion.reference_table_resolver import extract_table
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ class MedicationAdministrationICULoader:
         self,
         tables: MedicationAdministrationICUTables,
         patient_tables: PatientTables,
-        encounter_tables: EncounterTables,
+        encounter_tables: EncounterTables | object | None = None,
+        encounter_table: Table | object | None = None,
     ) -> None:
         """
         Inicializa o carregador.
@@ -48,7 +50,10 @@ class MedicationAdministrationICULoader:
 
         self._tables = tables
         self._patient_tables = patient_tables
-        self._encounter_tables = encounter_tables
+        encounter_source = encounter_table if encounter_table is not None else encounter_tables
+        if encounter_source is None:
+            raise ValueError("É necessário informar encounter_tables ou encounter_table.")
+        self._encounter_table = extract_table(encounter_source, "encounter")
 
     @property
     def tables(self) -> MedicationAdministrationICUTables:
@@ -79,7 +84,7 @@ class MedicationAdministrationICULoader:
         )
         valid_encounter_ids = self._fetch_existing_ids(
             connection=connection,
-            table=self._encounter_tables.encounter,
+            table=self._encounter_table,
             column_name="encounter_id",
             batch=normalized_batch,
         )

@@ -54,6 +54,7 @@ from src.ingestion.loaders.medication_statement_ed_loader import MedicationState
 from src.ingestion.loaders.specimen_loader import SpecimenLoader
 from src.ingestion.loaders.organization_loader import OrganizationLoader
 from src.ingestion.loaders.patient_loader import PatientLoader
+from src.ingestion.reference_table_resolver import resolve_reference_table
 from src.pipelines.base_resource_pipeline import ResourceIngestionSummary
 from src.pipelines.ingest_encounter import EncounterIngestionPipeline
 from src.pipelines.ingest_encounter_ed import EncounterEDIngestionPipeline
@@ -178,7 +179,11 @@ class IngestAllPipeline:
         self._condition_ed_loader = ConditionEDLoader(
             tables=tables.condition_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="condition_ed",
+                reference_column="encounter_id",
+            ),
         )
         self._procedure_loader = ProcedureLoader(
             tables=tables.procedure,
@@ -193,7 +198,11 @@ class IngestAllPipeline:
         self._procedure_icu_loader = ProcedureICULoader(
             tables=tables.procedure_icu,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="procedure_icu",
+                reference_column="encounter_id",
+            ),
         )
         self._observation_labevents_loader = ObservationLabeventsLoader(
             tables=tables.observation_labevents,
@@ -234,14 +243,30 @@ class IngestAllPipeline:
         self._observation_ed_loader = ObservationEDLoader(
             tables=tables.observation_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
-            procedure_tables=tables.procedure,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="observation_ed",
+                reference_column="encounter_id",
+            ),
+            procedure_table=resolve_reference_table(
+                tables,
+                primary_table_name="observation_ed",
+                reference_column="procedure_id",
+            ),
         )
         self._observation_vital_signs_ed_loader = ObservationVitalSignsEDLoader(
             tables=tables.observation_vital_signs_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
-            procedure_tables=tables.procedure,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="observation_vital_signs_ed",
+                reference_column="encounter_id",
+            ),
+            procedure_table=resolve_reference_table(
+                tables,
+                primary_table_name="observation_vital_signs_ed",
+                reference_column="procedure_id",
+            ),
         )
         self._medication_dispense_loader = MedicationDispenseLoader(
             tables=tables.medication_dispense,
@@ -252,7 +277,11 @@ class IngestAllPipeline:
         self._medication_dispense_ed_loader = MedicationDispenseEDLoader(
             tables=tables.medication_dispense_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="medication_dispense_ed",
+                reference_column="encounter_id",
+            ),
         )
         self._medication_administration_loader = MedicationAdministrationLoader(
             tables=tables.medication_administration,
@@ -263,12 +292,20 @@ class IngestAllPipeline:
         self._medication_administration_icu_loader = MedicationAdministrationICULoader(
             tables=tables.medication_administration_icu,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="medication_administration_icu",
+                reference_column="encounter_id",
+            ),
         )
         self._medication_statement_ed_loader = MedicationStatementEDLoader(
             tables=tables.medication_statement_ed,
             patient_tables=tables.patient,
-            encounter_tables=tables.encounter,
+            encounter_table=resolve_reference_table(
+                tables,
+                primary_table_name="medication_statement_ed",
+                reference_column="encounter_id",
+            ),
         )
         self._pipelines = {
             "organization": OrganizationIngestionPipeline(
