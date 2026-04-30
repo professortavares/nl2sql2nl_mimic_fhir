@@ -4,8 +4,10 @@ Página de exploração de dados individuais do paciente.
 
 from __future__ import annotations
 
+import html
 import logging
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any
 
 import streamlit as st
@@ -162,7 +164,9 @@ def _render_general_hospital_context(context: dict[str, Any]) -> None:
     ]
     _render_key_value_list(columns[0], left_items)
     _render_key_value_list(columns[1], right_items)
+    _render_hospital_transfers_section(context.get("hospital_transfers") or [])
     _render_diagnoses_section(context.get("diagnoses") or [])
+    _render_medications_section(context.get("medication_events") or [])
 
 
 def _render_emergency_department_context(context: dict[str, Any]) -> None:
@@ -262,6 +266,152 @@ def _render_diagnoses_section(rows: list[dict[str, Any]]) -> None:
     st.dataframe(diagnosis_rows, use_container_width=True, hide_index=True)
 
 
+def _render_hospital_transfers_section(rows: list[dict[str, Any]]) -> None:
+    """
+    Renderiza as transferências hospitalares do encounter atual.
+    """
+
+    st.subheader("Hospital transfers")
+    if not rows:
+        st.info("No hospital transfers found for this encounter.")
+        return
+
+    for row in rows:
+        location_name = _format_display_value(row.get("location_name")) or "Unknown location"
+        start_date = _format_datetime_display(row.get("start_date")) or "-"
+        end_date = _format_datetime_display(row.get("end_date")) or "Ongoing"
+        st.markdown(
+            f"""
+            <div style="
+                border: 1px solid rgba(49, 51, 63, 0.18);
+                border-radius: 0.75rem;
+                padding: 0.85rem 1rem;
+                margin-bottom: 0.5rem;
+                background: rgba(250, 250, 250, 0.75);
+            ">
+                <div style="font-weight: 700; margin-bottom: 0.15rem;">{html.escape(str(location_name))}</div>
+                <div style="color: rgba(49, 51, 63, 0.75);">
+                    {html.escape(start_date)} &rarr; {html.escape(end_date)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def _render_medications_section(rows: list[dict[str, Any]]) -> None:
+    """
+    Renderiza as medicações do encounter atual.
+    """
+
+    st.subheader("Medications")
+    if not rows:
+        st.info("No medications found for this encounter.")
+        return
+
+    medication_groups = _group_medication_events(rows)
+    for medication in medication_groups:
+        title = medication["medication_name"]
+        prescription_count = len(medication["prescriptions"])
+        expander_label = title if prescription_count == 1 else f"{title} ({prescription_count} prescriptions)"
+        with st.expander(expander_label, expanded=False):
+            for index, prescription in enumerate(medication["prescriptions"], start=1):
+                if index > 1:
+                    st.divider()
+                st.markdown(f"**Prescription {index}**")
+                left_column, middle_column, right_column = st.columns(3)
+                left_items = [
+                    ("Valid from", _format_datetime_display(prescription.get("validity_start")) or "-"),
+                    ("Valid to", _format_datetime_display(prescription.get("validity_end")) or "-"),
+                ]
+                middle_items = [
+                    ("Frequency", prescription.get("frequency_code")),
+                    ("Request status", prescription.get("request_status")),
+                ]
+                right_items = [
+                    ("Intent", prescription.get("request_intent")),
+                    ("Request ID", prescription.get("medication_request_id")),
+                ]
+                _render_key_value_list(left_column, left_items)
+                _render_key_value_list(middle_column, middle_items)
+                _render_key_value_list(right_column, right_items)
+
+                administrations = prescription["administrations"]
+                if not administrations:
+                    st.caption("No administrations recorded yet.")
+                    continue
+
+                st.markdown("**Administrations**")
+                st.dataframe(
+                    [
+                        {
+                            "effective_at": _format_datetime_display(administration.get("effective_at")) or "-",
+                            "dose_value": administration.get("dose_value"),
+                            "dose_unit": administration.get("dose_unit"),
+                            "status": administration.get("status"),
+                        }
+                        for administration in administrations
+                    ],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+
+def _group_medication_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Agrupa linhas de medicação por nome e por prescription/request.
+    """
+
+    grouped_by_name: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        medication_name = _format_display_value(row.get("medication_name")) or "Unknown medication"
+        request_id = str(row.get("medication_request_id") or f"{medication_name}-{row.get('validity_start') or 'request'}")
+        medication_group = grouped_by_name.setdefault(
+            medication_name,
+            {"medication_name": medication_name, "prescriptions": {}},
+        )
+        prescriptions: dict[str, Any] = medication_group["prescriptions"]
+        prescription = prescriptions.setdefault(
+            request_id,
+            {
+                "medication_request_id": row.get("medication_request_id"),
+                "validity_start": row.get("validity_start"),
+                "validity_end": row.get("validity_end"),
+                "frequency_code": row.get("frequency_code"),
+                "request_status": row.get("request_status"),
+                "request_intent": row.get("request_intent"),
+                "request_identifier": row.get("request_identifier"),
+                "administrations": [],
+            },
+        )
+        administration_id = row.get("medication_administration_id")
+        if administration_id is not None or row.get("effective_at") is not None or row.get("status") is not None:
+            prescription["administrations"].append(
+                {
+                    "id": administration_id,
+                    "effective_at": row.get("effective_at"),
+                    "dose_value": row.get("dose_value"),
+                    "dose_unit": row.get("dose_unit"),
+                    "status": row.get("status"),
+                }
+            )
+
+    grouped_rows: list[dict[str, Any]] = []
+    for medication_name, payload in grouped_by_name.items():
+        prescriptions = list(payload["prescriptions"].values())
+        prescriptions.sort(
+            key=lambda item: (
+                1 if item.get("validity_start") is None else 0,
+                str(item.get("validity_start") or ""),
+                str(item.get("medication_request_id") or ""),
+            )
+        )
+        grouped_rows.append({"medication_name": medication_name, "prescriptions": prescriptions})
+
+    grouped_rows.sort(key=lambda item: item["medication_name"].lower())
+    return grouped_rows
+
+
 def _collect_components(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Achata os componentes dos sinais vitais em uma tabela própria.
@@ -359,6 +509,21 @@ def _format_display_value(value: Any) -> Any:
     if isinstance(value, dict):
         return {key: _format_display_value(item) for key, item in value.items()}
     return value
+
+
+def _format_datetime_display(value: Any) -> str | None:
+    """Formata datas ISO para um texto legível na interface."""
+
+    if not isinstance(value, str) or not value.strip():
+        return None
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return value
+    if parsed.time() == datetime.min.time():
+        return parsed.strftime("%Y-%m-%d")
+    return parsed.strftime("%Y-%m-%d %H:%M")
 
 
 def _has_context_data(context: dict[str, Any]) -> bool:

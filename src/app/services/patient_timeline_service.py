@@ -45,6 +45,9 @@ class EncounterRepositoryProtocol(Protocol):
 class GeneralHospitalRepositoryProtocol(Protocol):
     """Contrato para consultas do contexto geral."""
 
+    def list_encounter_locations(self, connection: Connection, encounter_id: str) -> list[dict[str, Any]]:
+        ...
+
     def list_conditions(self, connection: Connection, encounter_id: str) -> list[dict[str, Any]]:
         ...
 
@@ -58,6 +61,9 @@ class GeneralHospitalRepositoryProtocol(Protocol):
         ...
 
     def list_medication_administrations(self, connection: Connection, encounter_id: str) -> list[dict[str, Any]]:
+        ...
+
+    def list_medication_events(self, connection: Connection, encounter_id: str) -> list[dict[str, Any]]:
         ...
 
     def list_labevents(self, connection: Connection, patient_id: str) -> list[dict[str, Any]]:
@@ -247,6 +253,7 @@ class PatientTimelineService:
         """Monta o contexto hospitalar geral."""
 
         repo = self._repositories.general_hospital_repository
+        hospital_transfers = _sort_rows(repo.list_encounter_locations(connection, summary.id), ("start_date", "end_date"))
         diagnoses = _sort_rows(
             repo.list_conditions(connection, summary.id),
             ("category_code", "condition_code"),
@@ -263,6 +270,10 @@ class PatientTimelineService:
         medication_administrations = _sort_rows(
             repo.list_medication_administrations(connection, summary.id),
             ("effective_at", "medication_code"),
+        )
+        medication_events = _sort_rows(
+            repo.list_medication_events(connection, summary.id),
+            ("medication_name", "validity_start", "effective_at", "medication_request_id"),
         )
         labs = _filter_rows_by_interval(
             rows=repo.list_labevents(connection, patient.id),
@@ -297,6 +308,7 @@ class PatientTimelineService:
         specimens = _sort_rows(specimens, ("collected_at", "id"))
         return {
             "hospitalization": _to_mapping(summary),
+            "hospital_transfers": hospital_transfers,
             "diagnoses": diagnoses,
             "procedures": procedures,
             "medications": {
@@ -304,6 +316,7 @@ class PatientTimelineService:
                 "dispensacoes": medication_dispenses,
                 "administracoes": medication_administrations,
             },
+            "medication_events": medication_events,
             "labs": labs,
             "microbiology": {
                 "testes": micro_tests,
@@ -398,8 +411,11 @@ def build_patient_timeline_service(settings: ProjectSettings) -> PatientTimeline
         ),
         general_hospital_repository=GeneralHospitalRepository(
             schema_name=settings.database.schema_name,
+            encounter_location_table_name=settings.encounter.auxiliary_table_name or "encounter_location",
+            location_table_name=settings.location.table_name,
             condition_table_name=settings.condition.table_name,
             procedure_table_name=settings.procedure.table_name,
+            medication_table_name=settings.medication.table_name,
             medication_request_table_name=settings.medication_request.table_name,
             medication_dispense_table_name=settings.medication_dispense.table_name,
             medication_administration_table_name=settings.medication_administration.table_name,
