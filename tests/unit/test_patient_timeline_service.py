@@ -40,16 +40,21 @@ class FakeEncounterRepository:
 class FakeGeneralHospitalRepository:
     """Repositório fake do contexto General Hospital."""
 
+    encounter_locations: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     conditions: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     procedures: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     medication_requests: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     medication_dispenses: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     medication_administrations: dict[str, list[dict[str, object]]] = field(default_factory=dict)
+    medication_events: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     labevents: list[dict[str, object]] = field(default_factory=list)
     micro_tests: list[dict[str, object]] = field(default_factory=list)
     micro_orgs: list[dict[str, object]] = field(default_factory=list)
     micro_suscs: list[dict[str, object]] = field(default_factory=list)
     specimens: list[dict[str, object]] = field(default_factory=list)
+
+    def list_encounter_locations(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.encounter_locations.get(encounter_id, []))
 
     def list_conditions(self, connection, encounter_id: str) -> list[dict[str, object]]:
         return list(self.conditions.get(encounter_id, []))
@@ -65,6 +70,9 @@ class FakeGeneralHospitalRepository:
 
     def list_medication_administrations(self, connection, encounter_id: str) -> list[dict[str, object]]:
         return list(self.medication_administrations.get(encounter_id, []))
+
+    def list_medication_events(self, connection, encounter_id: str) -> list[dict[str, object]]:
+        return list(self.medication_events.get(encounter_id, []))
 
     def list_labevents(self, connection, patient_id: str) -> list[dict[str, object]]:
         return list(self.labevents)
@@ -215,11 +223,36 @@ def test_build_timeline_builds_general_ed_and_icu_contexts() -> None:
     """Deve montar os três contextos clínicos com dados estruturados."""
 
     general_hospital = FakeGeneralHospitalRepository(
+        encounter_locations={
+            "enc-1": [
+                {"start_date": "2024-01-01T00:00:00", "end_date": "2024-01-01T12:00:00", "location_name": "ED"},
+                {"start_date": "2024-01-01T12:00:00", "end_date": None, "location_name": "Ward A"},
+            ]
+        },
         conditions={"enc-1": [{"id": "cond-1"}]},
         procedures={"enc-1": [{"id": "proc-1"}]},
         medication_requests={"enc-1": [{"id": "mr-1"}]},
         medication_dispenses={"enc-1": [{"id": "md-1"}]},
         medication_administrations={"enc-1": [{"id": "ma-1"}]},
+        medication_events={
+            "enc-1": [
+                {
+                    "medication_request_id": "mr-1",
+                    "validity_start": "2024-01-01T08:00:00",
+                    "validity_end": "2024-01-01T20:00:00",
+                    "medication_name": "Morphine",
+                    "frequency_code": "ONCE",
+                    "request_status": "completed",
+                    "request_intent": "order",
+                    "request_identifier": "req-1",
+                    "medication_administration_id": "ma-1",
+                    "effective_at": "2024-01-01T10:00:00",
+                    "dose_value": "2",
+                    "dose_unit": "mg",
+                    "status": "completed",
+                }
+            ]
+        },
         labevents=[{"id": "lab-1", "effective_at": "2024-01-02T10:00:00"}],
         micro_tests=[{"id": "mt-1", "effective_at": "2024-01-02T11:00:00"}],
         micro_orgs=[{"id": "mo-1", "derived_from_observation_micro_test_id": "mt-1"}],
@@ -256,11 +289,32 @@ def test_build_timeline_builds_general_ed_and_icu_contexts() -> None:
     encounter = timeline.encounters[0]
 
     assert encounter.general_hospital["hospitalization"]["id"] == "enc-1"
+    assert encounter.general_hospital["hospital_transfers"] == [
+        {"start_date": "2024-01-01T00:00:00", "end_date": "2024-01-01T12:00:00", "location_name": "ED"},
+        {"start_date": "2024-01-01T12:00:00", "end_date": None, "location_name": "Ward A"},
+    ]
     assert encounter.general_hospital["diagnoses"] == [{"id": "cond-1"}]
     assert encounter.general_hospital["procedures"] == [{"id": "proc-1"}]
     assert encounter.general_hospital["medications"]["pedidos_de_medicacao"] == [{"id": "mr-1"}]
     assert encounter.general_hospital["medications"]["dispensacoes"] == [{"id": "md-1"}]
     assert encounter.general_hospital["medications"]["administracoes"] == [{"id": "ma-1"}]
+    assert encounter.general_hospital["medication_events"] == [
+        {
+            "medication_request_id": "mr-1",
+            "validity_start": "2024-01-01T08:00:00",
+            "validity_end": "2024-01-01T20:00:00",
+            "medication_name": "Morphine",
+            "frequency_code": "ONCE",
+            "request_status": "completed",
+            "request_intent": "order",
+            "request_identifier": "req-1",
+            "medication_administration_id": "ma-1",
+            "effective_at": "2024-01-01T10:00:00",
+            "dose_value": "2",
+            "dose_unit": "mg",
+            "status": "completed",
+        }
+    ]
     assert encounter.general_hospital["labs"] == [{"id": "lab-1", "effective_at": "2024-01-02T10:00:00"}]
     assert encounter.general_hospital["microbiology"]["testes"] == [
         {"id": "mt-1", "effective_at": "2024-01-02T11:00:00"}
@@ -346,6 +400,7 @@ def test_build_timeline_keeps_empty_ed_and_icu_contexts_empty() -> None:
     encounter = timeline.encounters[0]
 
     assert encounter.general_hospital["hospitalization"]["id"] == "enc-1"
+    assert encounter.general_hospital["hospital_transfers"] == []
     assert encounter.emergency_department["stay"] is None
     assert encounter.emergency_department["diagnoses"] == []
     assert encounter.emergency_department["procedures"] == []
