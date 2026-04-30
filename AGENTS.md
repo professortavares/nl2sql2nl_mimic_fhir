@@ -95,3 +95,7 @@ Quando mexer em ingestao, prefira sempre:
 - O projeto ja passou por varias correcoes de FK em tabelas ED e ICU.
 - O ponto sensivel atual e manter alinhados: `schema.py`, `reference_table_resolver.py`, `ingest_all.py` e os testes.
 - Se um novo erro de FK surgir, primeiro verifique se ele vem do schema fisico ou da validacao em runtime do loader.
+- A tela `src/app/pages/individual_data.py` usa `PatientTimelineService` para montar a visao individual do paciente.
+- O contexto `general_hospital` agora inclui `hospital_transfers` e `medication_events` para o `encounter_id` atual, alem de diagnosticos, procedimentos e medicamentos ja existentes.
+- A query de transferencias usa `encounter_location` + `location`; a query de medicações usa `medication_request` + `medication` + `medication_administration` com `LEFT JOIN` para nao perder pedidos sem administracao.
+- Em `medication_events`, o nome da medicacao pode ficar `NULL` quando nao houver `medication_id` e tambem nao existir `medication_code` na administracao associada.
